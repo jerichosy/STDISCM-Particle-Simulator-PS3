@@ -14,6 +14,7 @@ public class ParticleSimulatorGUI extends JPanel {
     private long lastTime = System.currentTimeMillis();
     private int frames = 0;
     private String fps = "FPS: 0";
+    private String particleCount = "Particle Count: 0";
 
     public ParticleSimulatorGUI() {
 //        for(int i = 0; i < 100; i++) {
@@ -46,6 +47,9 @@ public class ParticleSimulatorGUI extends JPanel {
 //        long toc = System.currentTimeMillis();
 //        System.out.println("Submitted all particles in " + (toc - tic) + " ms");
 
+        // Update particle count string with the current size of the particles list
+        particleCount = "Particle Count: " + particles.size();
+
         repaint(); // Re-draw GUI with updated particle positions
     }
 
@@ -67,6 +71,14 @@ public class ParticleSimulatorGUI extends JPanel {
         // Set the color for the FPS text
         g.setColor(Color.WHITE); // White color for the text
         g.drawString(fps, 10, 20); // Draw FPS counter on screen
+
+        // Draw a semi-transparent background for the Particle Count counter for better readability
+        g.setColor(new Color(0, 0, 0, 128)); // Black with 50% opacity
+        g.fillRect(5, 30, 150, 20); // Adjust the size according to your needs
+
+        // Set the color for the Particle Count text
+        g.setColor(Color.WHITE); // White color for the text
+        g.drawString(particleCount, 10, 45); // Draw Particle Count on screen
     }
 
     public void addParticlesLinear(int n, Point startPoint, Point endPoint, double velocity, double angle) {
