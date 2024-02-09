@@ -25,6 +25,7 @@ public class ParticleSimulatorGUI extends JPanel {
         }
 
         // Swing Timer for animation
+        // Analogy: This is just like specifying an FPS limit in a video game instead of uncapped FPS.
         new Timer(16, e -> updateAndRepaint()).start(); // ~60 FPS
 
         // Timer to update FPS counter every 0.5 seconds
