@@ -41,7 +41,10 @@ public class ParticleSimulatorGUI extends JPanel {
 
     private void updateAndRepaint() {
         // Submit each particle's run method for parallel execution
-        particles.forEach(executor::submit);
+//        long tic = System.currentTimeMillis();
+        particles.forEach(executor::submit); // At 60k particles, this takes ~3ms
+//        long toc = System.currentTimeMillis();
+//        System.out.println("Submitted all particles in " + (toc - tic) + " ms");
 
         repaint(); // Re-draw GUI with updated particle positions
     }
@@ -49,9 +52,12 @@ public class ParticleSimulatorGUI extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+//        long tic = System.currentTimeMillis();
         for (Particle particle : particles) {
             particle.draw(g); // Let each particle draw itself
-        }
+        } // At 60k particles, this takes 110-120ms
+//        long toc = System.currentTimeMillis();
+//        System.out.println("Drawn all particles in " + (toc - tic) + " ms");
         frames++; // Increment frame count
 
         // Draw a semi-transparent background for the FPS counter for better readability
