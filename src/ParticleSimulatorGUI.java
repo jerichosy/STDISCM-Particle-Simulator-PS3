@@ -11,8 +11,11 @@ public class ParticleSimulatorGUI extends JPanel {
     private List<Particle> particles = new ArrayList<>();
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
+    private long lastTime = System.currentTimeMillis();
+    private int frames = 0;
+    private String fps = "FPS: 0";
+
     public ParticleSimulatorGUI() {
-        // Generate initial particles
         for(int i = 0; i < 100; i++) {
             particles.add(new Particle(
                     (int)(Math.random() * WINDOW_WIDTH),
@@ -23,6 +26,16 @@ public class ParticleSimulatorGUI extends JPanel {
 
         // Swing Timer for animation
         new Timer(16, e -> updateAndRepaint()).start(); // ~60 FPS
+
+        // Timer to update FPS counter every 0.5 seconds
+        new Timer(500, e -> {
+            long currentTime = System.currentTimeMillis();
+            long delta = currentTime - lastTime;
+            fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
+            System.out.println(frames + " frames in the last " + delta + " ms");
+            frames = 0; // Reset frame count
+            lastTime = currentTime;
+        }).start();
     }
 
     private void updateAndRepaint() {
@@ -38,6 +51,8 @@ public class ParticleSimulatorGUI extends JPanel {
         for (Particle particle : particles) {
             particle.draw(g); // Let each particle draw itself
         }
+        frames++; // Increment frame count
+        g.drawString(fps, 10, 20); // Draw FPS counter on screen
     }
 
     public static void main(String[] args) {
