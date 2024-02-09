@@ -108,6 +108,7 @@ public class ParticleSimulatorGUI extends JPanel {
         panel.add(panelVelocity);
     }
 
+    // TODO: Add input validation
     private JPanel createPanelForLinearParticles() {
         JPanel panel = new JPanel(new FlowLayout());
 
@@ -149,6 +150,7 @@ public class ParticleSimulatorGUI extends JPanel {
         return panel;
     }
 
+    // TODO: Add input validation
     private JPanel createPanelForAngularParticles() {
         JPanel panel = new JPanel(new FlowLayout());
 
@@ -188,6 +190,7 @@ public class ParticleSimulatorGUI extends JPanel {
         return panel;
     }
 
+    // TODO: Add input validation
     private JPanel createPanelForVelocityParticles() {
         JPanel panel = new JPanel(new FlowLayout());
 
