@@ -53,6 +53,13 @@ public class ParticleSimulatorGUI extends JPanel {
             particle.draw(g); // Let each particle draw itself
         }
         frames++; // Increment frame count
+
+        // Draw a semi-transparent background for the FPS counter for better readability
+        g.setColor(new Color(0, 0, 0, 128)); // Black with 50% opacity
+        g.fillRect(5, 5, 100, 20); // Adjust the size according to your needs
+
+        // Set the color for the FPS text
+        g.setColor(Color.WHITE); // White color for the text
         g.drawString(fps, 10, 20); // Draw FPS counter on screen
     }
 
