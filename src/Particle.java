@@ -1,5 +1,7 @@
 import java.awt.*;
 
+// TODO: Invert Y
+// TODO: Check angle
 public class Particle implements Runnable {
     private int x, y; // Position
     private double velocity;
