@@ -38,6 +38,7 @@ public class ParticleSimulatorGUI extends JPanel {
             frames = 0; // Reset frame count
             lastTime = currentTime;
         }).start();
+
     }
 
     private void updateAndRepaint() {
@@ -124,6 +125,17 @@ public class ParticleSimulatorGUI extends JPanel {
         // Section for Adding Velocity Distribution Particles
         JPanel panelVelocity = createPanelForVelocityParticles();
         panel.add(panelVelocity);
+
+        // Button to clear screen
+        JButton clearButton = new JButton("Clear Screen");
+        clearButton.addActionListener(e->clearScreen());
+        panel.add(clearButton);
+
+    }
+
+    private void clearScreen(){
+        particles.clear();
+        repaint();
     }
 
     // TODO: Add input validation
