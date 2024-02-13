@@ -11,6 +11,8 @@ public class ParticleSimulatorGUI extends JPanel {
     private List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
+    private List<Wall> walls = new CopyOnWriteArrayList<>();
+
     private long lastTime = System.currentTimeMillis();
     private int frames = 0;
     private String fps = "FPS: 0";
@@ -58,11 +60,16 @@ public class ParticleSimulatorGUI extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 //        long tic = System.currentTimeMillis();
+        for(Wall wall: walls){
+            wall.draw(g);
+        }
         for (Particle particle : particles) {
             particle.draw(g); // Let each particle draw itself
         } // At 60k particles, this takes 110-120ms
 //        long toc = System.currentTimeMillis();
 //        System.out.println("Drawn all particles in " + (toc - tic) + " ms");
+
+
         frames++; // Increment frame count
 
         // Draw a semi-transparent background for the FPS counter for better readability
@@ -111,6 +118,12 @@ public class ParticleSimulatorGUI extends JPanel {
         }
     }
 
+    public void addWall(int x1, int y1, int x2, int y2){
+        walls.add(new Wall(x1, y1, x2, y2));
+        System.out.println("Wall added: (" + x1 + ", " + y1 + ") to (" + x2 + ", " + y2 + ")");
+        repaint();
+    }
+
     private void setupControlPanel(JPanel panel) {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
@@ -126,6 +139,10 @@ public class ParticleSimulatorGUI extends JPanel {
         JPanel panelVelocity = createPanelForVelocityParticles();
         panel.add(panelVelocity);
 
+        // Section for adding walls
+        JPanel paneWalls = createPanelForWalls();
+        panel.add(paneWalls);
+
         // Button to clear screen
         JButton clearButton = new JButton("Clear Screen");
         clearButton.addActionListener(e->clearScreen());
@@ -135,6 +152,7 @@ public class ParticleSimulatorGUI extends JPanel {
 
     private void clearScreen(){
         particles.clear();
+        walls.clear();
         repaint();
     }
 
@@ -255,6 +273,37 @@ public class ParticleSimulatorGUI extends JPanel {
         panel.add(endVelocityField);
         panel.add(new JLabel("Angle: "));
         panel.add(angleField);
+        panel.add(addButton);
+
+        return panel;
+    }
+
+    private JPanel createPanelForWalls(){
+        JPanel panel = new JPanel(new FlowLayout());
+
+        JTextField x1Field = new JTextField("0", 5);
+        JTextField y1Field = new JTextField("0", 5);
+        JTextField x2Field = new JTextField("100", 5);
+        JTextField y2Field = new JTextField("100", 5);
+        JButton addButton = new JButton("Add Wall");
+
+        addButton.addActionListener(e->{
+            int x1 = Integer.parseInt(x1Field.getText());
+            int y1 = Integer.parseInt(y1Field.getText());
+            int x2 = Integer.parseInt(x2Field.getText());
+            int y2 = Integer.parseInt(y2Field.getText());
+
+            addWall(x1, y1, x2, y2);
+        });
+
+        panel.add(new JLabel("X1:"));
+        panel.add(x1Field);
+        panel.add(new JLabel("Y1:"));
+        panel.add(y1Field);
+        panel.add(new JLabel("X2:"));
+        panel.add(x2Field);
+        panel.add(new JLabel("Y2:"));
+        panel.add(y2Field);
         panel.add(addButton);
 
         return panel;
