@@ -162,12 +162,12 @@ public class ParticleSimulatorGUI extends JPanel {
     private JPanel createPanelForLinearParticles() {
         JPanel panel = new JPanel(new FlowLayout());
 
-        JTextField nField = new JTextField("10", 5);
+        JTextField nField = new JTextField("1", 5);
         JTextField startXField = new JTextField("0", 5);
         JTextField startYField = new JTextField("0", 5);
         JTextField endXField = new JTextField("1280", 5);
         JTextField endYField = new JTextField("720", 5);
-        JTextField velocityField = new JTextField("5", 5);
+        JTextField velocityField = new JTextField("8", 5);
         JTextField angleField = new JTextField("45", 5);
         JButton addButton = new JButton("Add Linear");
 
@@ -286,7 +286,7 @@ public class ParticleSimulatorGUI extends JPanel {
         JTextField x1Field = new JTextField("600", 5);
         JTextField y1Field = new JTextField("100", 5);
         JTextField x2Field = new JTextField("600", 5);
-        JTextField y2Field = new JTextField("500", 5);
+        JTextField y2Field = new JTextField("600", 5);
         JButton addButton = new JButton("Add Wall");
 
         addButton.addActionListener(e->{
