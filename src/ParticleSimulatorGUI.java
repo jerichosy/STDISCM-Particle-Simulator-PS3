@@ -283,9 +283,9 @@ public class ParticleSimulatorGUI extends JPanel {
     private JPanel createPanelForWalls(){
         JPanel panel = new JPanel(new FlowLayout());
 
-        JTextField x1Field = new JTextField("600", 5);
-        JTextField y1Field = new JTextField("100", 5);
-        JTextField x2Field = new JTextField("600", 5);
+        JTextField x1Field = new JTextField("100", 5);
+        JTextField y1Field = new JTextField("600", 5);
+        JTextField x2Field = new JTextField("800", 5);
         JTextField y2Field = new JTextField("600", 5);
         JButton addButton = new JButton("Add Wall");
 
