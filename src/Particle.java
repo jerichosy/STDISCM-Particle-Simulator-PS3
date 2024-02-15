@@ -23,7 +23,7 @@ public class Particle implements Runnable {
     public void update() {
         // Update the position based on velocity and angle
         x += (int) (velocity * Math.cos(Math.toRadians(angle)));
-        y += (int) (velocity * Math.sin(Math.toRadians(angle)));
+        y -= (int) (velocity * Math.sin(Math.toRadians(angle)));
 
         // Check and handle collisions with the window boundaries
         if(x <= 0 || x >= ParticleSimulatorGUI.WINDOW_WIDTH) {

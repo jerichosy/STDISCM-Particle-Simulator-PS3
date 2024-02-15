@@ -104,7 +104,8 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             int x = startPoint.x + (int)(i * deltaX);
-            int y = startPoint.y + (int)(i * deltaY);
+//            int y = startPoint.y - (int)(i * deltaY);
+            int y = WINDOW_HEIGHT - (startPoint.y + (int)(i * deltaY));
             particles.add(new Particle(x, y, velocity, angle));
         }
     }
@@ -114,7 +115,7 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             double angle = startAngle + i * deltaAngle;
-            particles.add(new Particle(startPoint.x, startPoint.y, velocity, angle));
+            particles.add(new Particle(startPoint.x, WINDOW_HEIGHT - startPoint.y, velocity, angle));
         }
     }
 
@@ -123,12 +124,12 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             double velocity = startVelocity + i * deltaVelocity;
-            particles.add(new Particle(startPoint.x, startPoint.y, velocity, angle));
+            particles.add(new Particle(startPoint.x, WINDOW_HEIGHT - startPoint.y, velocity, angle));
         }
     }
 
     public void addWall(int x1, int y1, int x2, int y2){
-        walls.add(new Wall(x1, y1, x2, y2));
+        walls.add(new Wall(x1, WINDOW_HEIGHT - y1, x2, WINDOW_HEIGHT - y2));
         System.out.println("Wall added: (" + x1 + ", " + y1 + ") to (" + x2 + ", " + y2 + ")");
         repaint();
     }
@@ -172,12 +173,12 @@ public class ParticleSimulatorGUI extends JPanel {
         JPanel panel = new JPanel(new FlowLayout());
 
         JTextField nField = new JTextField("1", 5);
-        JTextField startXField = new JTextField("0", 5);
-        JTextField startYField = new JTextField("0", 5);
+        JTextField startXField = new JTextField("300", 5);
+        JTextField startYField = new JTextField("500", 5);
         JTextField endXField = new JTextField("1280", 5);
         JTextField endYField = new JTextField("720", 5);
         JTextField velocityField = new JTextField("8", 5);
-        JTextField angleField = new JTextField("45", 5);
+        JTextField angleField = new JTextField("90", 5);
         JButton addButton = new JButton("Add Linear");
 
         addButton.addActionListener(e -> {
