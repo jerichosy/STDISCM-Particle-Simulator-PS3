@@ -182,12 +182,12 @@ public class ParticleSimulatorGUI extends JPanel {
         JPanel panel = new JPanel(new FlowLayout());
 
         JTextField nField = new JTextField("1", 5);
-        JTextField startXField = new JTextField("300", 5);
-        JTextField startYField = new JTextField("500", 5);
+        JTextField startXField = new JTextField("10", 5);
+        JTextField startYField = new JTextField("400", 5);
         JTextField endXField = new JTextField("1280", 5);
         JTextField endYField = new JTextField("720", 5);
-        JTextField velocityField = new JTextField("8", 5);
-        JTextField angleField = new JTextField("90", 5);
+        JTextField velocityField = new JTextField("7", 5);
+        JTextField angleField = new JTextField("0", 5);
         JButton addButton = new JButton("Add Linear");
 
         addButton.addActionListener(e -> {
@@ -264,11 +264,11 @@ public class ParticleSimulatorGUI extends JPanel {
         JPanel panel = new JPanel(new FlowLayout());
 
         JTextField nField = new JTextField("50", 5);
-        JTextField startXField = new JTextField("640", 5); // Center X
-        JTextField startYField = new JTextField("360", 5); // Center Y
+        JTextField startXField = new JTextField("0", 5); // Center X
+        JTextField startYField = new JTextField("0", 5); // Center Y
         JTextField startVelocityField = new JTextField("1", 5);
-        JTextField endVelocityField = new JTextField("20", 5);
-        JTextField angleField = new JTextField("90", 5); // Straight up
+        JTextField endVelocityField = new JTextField("300", 5);
+        JTextField angleField = new JTextField("45", 5); // Straight up
         JButton addButton = new JButton("Add Velocity");
 
         addButton.addActionListener(e -> {
@@ -302,10 +302,10 @@ public class ParticleSimulatorGUI extends JPanel {
     private JPanel createPanelForWalls(){
         JPanel panel = new JPanel(new FlowLayout());
 
-        JTextField x1Field = new JTextField("100", 5);
-        JTextField y1Field = new JTextField("600", 5);
-        JTextField x2Field = new JTextField("800", 5);
-        JTextField y2Field = new JTextField("600", 5);
+        JTextField x1Field = new JTextField("320", 5);
+        JTextField y1Field = new JTextField("240", 5);
+        JTextField x2Field = new JTextField("320", 5);
+        JTextField y2Field = new JTextField("480", 5);
         JButton addButton = new JButton("Add Wall");
 
         addButton.addActionListener(e->{

@@ -34,10 +34,11 @@ public class Particle implements Runnable {
         }
 
         for(Wall wall: ParticleSimulatorGUI.getWalls()){
-            if(x == wall.getX1() && y >= wall.getY1() && y <= wall.getY2()){
+            if(x == wall.getX1() && y >= wall.getY2() && y <= wall.getY1()){
                 angle = 180 - angle;
             }
-            if (y == wall.getY1() && x >= wall.getX1() && x <= wall.getX2()){
+
+            if(y == wall.getY1() && x >= wall.getX1() && x <= wall.getX2()){
                 angle = 360 - angle;
             }
 
