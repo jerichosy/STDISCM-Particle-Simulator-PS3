@@ -40,6 +40,7 @@ public class Particle implements Runnable {
             if (y == wall.getY1() && x >= wall.getX1() && x <= wall.getX2()){
                 angle = 360 - angle;
             }
+
         }
 
 

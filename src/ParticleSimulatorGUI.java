@@ -19,6 +19,7 @@ public class ParticleSimulatorGUI extends JPanel {
     private int frames = 0;
     private String fps = "FPS: 0";
     private String particleCount = "Particle Count: 0";
+    private boolean isPaused = false;
 
     public ParticleSimulatorGUI() {
 //        for(int i = 0; i < 100; i++) {
@@ -46,16 +47,18 @@ public class ParticleSimulatorGUI extends JPanel {
     }
 
     private void updateAndRepaint() {
-        // Submit each particle's run method for parallel execution
+        if (!isPaused) {
+            // Submit each particle's run method for parallel execution
 //        long tic = System.currentTimeMillis();
-        particles.forEach(executor::submit); // At 60k particles, this takes ~3ms
+            particles.forEach(executor::submit); // At 60k particles, this takes ~3ms
 //        long toc = System.currentTimeMillis();
 //        System.out.println("Submitted all particles in " + (toc - tic) + " ms");
 
-        // Update particle count string with the current size of the particles list
-        particleCount = "Particle Count: " + particles.size();
+            // Update particle count string with the current size of the particles list
+            particleCount = "Particle Count: " + particles.size();
 
-        repaint(); // Re-draw GUI with updated particle positions
+            repaint(); // Re-draw GUI with updated particle positions
+        }
     }
 
     @Override
@@ -89,6 +92,10 @@ public class ParticleSimulatorGUI extends JPanel {
         // Set the color for the Particle Count text
         g.setColor(Color.WHITE); // White color for the text
         g.drawString(particleCount, 10, 45); // Draw Particle Count on screen
+
+        // display pause state
+        g.setColor(Color.WHITE);
+        g.drawString("Paused: " + isPaused, 10, 65);
     }
 
     public void addParticlesLinear(int n, Point startPoint, Point endPoint, double velocity, double angle) {
@@ -145,11 +152,13 @@ public class ParticleSimulatorGUI extends JPanel {
         JPanel paneWalls = createPanelForWalls();
         panel.add(paneWalls);
 
-        // Button to clear screen
-        JButton clearButton = new JButton("Clear Screen");
-        clearButton.addActionListener(e->clearScreen());
-        panel.add(clearButton);
+        JPanel panelToggle = createPanelForClearAndPause();
+        panel.add(panelToggle);
 
+    }
+
+    private void togglePause(){
+        isPaused = !isPaused;
     }
 
     private void clearScreen(){
@@ -307,6 +316,22 @@ public class ParticleSimulatorGUI extends JPanel {
         panel.add(new JLabel("Y2:"));
         panel.add(y2Field);
         panel.add(addButton);
+
+        return panel;
+    }
+
+    private JPanel createPanelForClearAndPause(){
+        JPanel panel = new JPanel(new FlowLayout());
+
+        // Button to clear screen
+        JButton clearButton = new JButton("Clear Screen");
+        clearButton.addActionListener(e->clearScreen());
+        panel.add(clearButton);
+
+        // Pause btn
+        JButton pauseButton = new JButton("Pause");
+        pauseButton.addActionListener(e->togglePause());
+        panel.add(pauseButton);
 
         return panel;
     }
