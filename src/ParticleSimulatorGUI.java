@@ -104,8 +104,7 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             int x = startPoint.x + (int)(i * deltaX);
-//            int y = startPoint.y - (int)(i * deltaY);
-            int y = WINDOW_HEIGHT - (startPoint.y + (int)(i * deltaY));
+            int y = startPoint.y + (int)(i * deltaY);
             particles.add(new Particle(x, y, velocity, angle));
         }
     }
@@ -327,11 +326,13 @@ public class ParticleSimulatorGUI extends JPanel {
         // Button to clear screen
         JButton clearButton = new JButton("Clear Screen");
         clearButton.addActionListener(e->clearScreen());
+        clearButton.setPreferredSize(new Dimension(120,30));
         panel.add(clearButton);
 
         // Pause btn
         JButton pauseButton = new JButton("Pause");
         pauseButton.addActionListener(e->togglePause());
+        pauseButton.setPreferredSize(new Dimension(100,30));
         panel.add(pauseButton);
 
         return panel;
