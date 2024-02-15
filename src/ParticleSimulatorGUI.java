@@ -114,7 +114,7 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             double angle = startAngle + i * deltaAngle;
-            particles.add(new Particle(startPoint.x, WINDOW_HEIGHT - startPoint.y, velocity, angle));
+            particles.add(new Particle(startPoint.x, startPoint.y, velocity, angle));
         }
     }
 
@@ -123,7 +123,7 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             double velocity = startVelocity + i * deltaVelocity;
-            particles.add(new Particle(startPoint.x, WINDOW_HEIGHT - startPoint.y, velocity, angle));
+            particles.add(new Particle(startPoint.x, startPoint.y, velocity, angle));
         }
     }
 
