@@ -167,6 +167,16 @@ public class ParticleSimulatorGUI extends JPanel {
         repaint();
     }
 
+    private void clearParticles(){
+        particles.clear();
+        repaint();
+    }
+
+    private void clearWalls(){
+        walls.clear();
+        repaint();
+    }
+
     // TODO: Add input validation
     private JPanel createPanelForLinearParticles() {
         JPanel panel = new JPanel(new FlowLayout());
@@ -324,15 +334,27 @@ public class ParticleSimulatorGUI extends JPanel {
         JPanel panel = new JPanel(new FlowLayout());
 
         // Button to clear screen
-        JButton clearButton = new JButton("Clear Screen");
-        clearButton.addActionListener(e->clearScreen());
-        clearButton.setPreferredSize(new Dimension(120,30));
-        panel.add(clearButton);
+        JButton clearParticlesButton = new JButton("Clear Particles");
+        clearParticlesButton.addActionListener(e->clearParticles());
+        clearParticlesButton.setPreferredSize(new Dimension(120,30));
+        panel.add(clearParticlesButton);
+
+        // Button to clear screen
+        JButton clearWallsButton = new JButton("Clear Walls");
+        clearWallsButton.addActionListener(e->clearWalls());
+        clearWallsButton.setPreferredSize(new Dimension(120,30));
+        panel.add(clearWallsButton);
+
+        // Button to clear screen
+        JButton clearScreenButton = new JButton("Clear Screen");
+        clearScreenButton.addActionListener(e->clearScreen());
+        clearScreenButton.setPreferredSize(new Dimension(120,30));
+        panel.add(clearScreenButton);
 
         // Pause btn
         JButton pauseButton = new JButton("Pause");
         pauseButton.addActionListener(e->togglePause());
-        pauseButton.setPreferredSize(new Dimension(100,30));
+        pauseButton.setPreferredSize(new Dimension(120,30));
         panel.add(pauseButton);
 
         return panel;
