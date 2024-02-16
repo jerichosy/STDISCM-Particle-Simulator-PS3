@@ -7,9 +7,9 @@ public class Particle {
     private double velocity;
     private double angle; // In degrees
 
-    public Particle(int x, int y, double velocity, double angle) {
+    public Particle(int x, int y, double velocity, double angle, int WINDOW_HEIGHT) {
         this.x = x;
-        this.y = y;
+        this.y = WINDOW_HEIGHT - y;
         this.velocity = velocity;
         this.angle = angle;
     }
