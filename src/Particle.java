@@ -2,7 +2,6 @@ import java.awt.*;
 
 // TODO: Invert Y
 // TODO: Check angle
-//public class Particle implements Runnable {
 public class Particle {
     private int x, y; // Position
     private double velocity;
@@ -14,12 +13,6 @@ public class Particle {
         this.velocity = velocity;
         this.angle = angle;
     }
-
-//    @Override
-//    public void run() {
-//        // The run method now invokes update for using with ExecutorService
-//        update();
-//    }
 
     public void update(double deltaTime) {
         // Convert velocity from pixels per second to pixels per update
@@ -48,16 +41,6 @@ public class Particle {
             nextY = ParticleSimulatorGUI.WINDOW_HEIGHT; // Correct position
         }
 
-////        COMPUTATION FOR COLLISION HERE
-//        for(Wall wall: ParticleSimulatorGUI.getWalls()){
-//            if(x == wall.getX1() && y >= wall.getY2() && y <= wall.getY1()){
-//                angle = 180 - angle;
-//            }
-//            if(y == wall.getY1() && x >= wall.getX1() && x <= wall.getX2()){
-//                angle = 180 - angle;
-//            }
-//        }
-
         for(Wall wall: ParticleSimulatorGUI.getWalls()) {
             // Assuming a very simple check that the wall is either vertical or horizontal
             // Also assuming the particle size is negligible; otherwise, include the radius in these calculations
@@ -77,10 +60,6 @@ public class Particle {
         // Update positions after handling collisions
         x = nextX;
         y = nextY;
-
-//        // Keep the updated angle within bounds (0 to 360 degrees)
-//        while (angle < 0) angle += 360;
-//        while (angle > 360) angle -= 360;
 
         // Normalize the angle
         angle = (angle + 360) % 360;
