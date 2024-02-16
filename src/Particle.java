@@ -41,19 +41,44 @@ public class Particle {
             nextY = ParticleSimulatorGUI.WINDOW_HEIGHT; // Correct position
         }
 
+        // New collision logic for diagonal walls
         for(Wall wall: ParticleSimulatorGUI.getWalls()) {
-            // Assuming a very simple check that the wall is either vertical or horizontal
-            // Also assuming the particle size is negligible; otherwise, include the radius in these calculations
-            boolean collidesWithVerticalWall = (x <= wall.getX1() && nextX >= wall.getX1()) || (x >= wall.getX1() && nextX <= wall.getX1());
-            boolean collidesWithHorizontalWall = (y <= wall.getY1() && nextY >= wall.getY1()) || (y >= wall.getY1() && nextY <= wall.getY1());
+            if (checkIntersection(x, y, nextX, nextY, wall.getX1(), wall.getY1(), wall.getX2(), wall.getY2())) {
+                // Calculate wall vector components
+                double wallDX = wall.getX2() - wall.getX1();
+                double wallDY = wall.getY2() - wall.getY1();
+                // Calculate wall normal (perpendicular vector)
+                double wallNormalX = -wallDY;
+                double wallNormalY = wallDX;
 
-            if (collidesWithVerticalWall && nextY >= Math.min(wall.getY1(), wall.getY2()) && nextY <= Math.max(wall.getY1(), wall.getY2())) {
-                angle = 180 - angle; // Reflect angle horizontally
-                nextX = x; // Cancel the horizontal movement for this update
-            }
-            if (collidesWithHorizontalWall && nextX >= Math.min(wall.getX1(), wall.getX2()) && nextX <= Math.max(wall.getX1(), wall.getX2())) {
-                angle = 360 - angle; // Reflect angle vertically
-                nextY = y; // Cancel the vertical movement for this update
+                // Normalize the wall normal
+                double normLength = Math.sqrt(wallNormalX * wallNormalX + wallNormalY * wallNormalY);
+                wallNormalX /= normLength;
+                wallNormalY /= normLength;
+
+                // Calculate the velocity vector
+                double velocityX = velocityPerUpdate * Math.cos(Math.toRadians(angle));
+                double velocityY = -velocityPerUpdate * Math.sin(Math.toRadians(angle));
+
+                // Calculate the dot product of velocity and wall normal
+                double dotProduct = velocityX * wallNormalX + velocityY * wallNormalY;
+
+                // Calculate the reflection vector
+                double reflectX = velocityX - 2 * dotProduct * wallNormalX;
+                double reflectY = velocityY - 2 * dotProduct * wallNormalY;
+
+                // Convert reflection vector to angle
+                double newAngleRadians = Math.atan2(-reflectY, reflectX);
+                angle = Math.toDegrees(newAngleRadians);
+
+                // Normalize the angle
+                angle = (angle + 360) % 360;
+
+                // Recalculate nextX and nextY based on the new angle
+                nextX = x + (int) (Math.cos(newAngleRadians) * velocityPerUpdate);
+                nextY = y - (int) (Math.sin(newAngleRadians) * velocityPerUpdate);
+
+                break; // Handle one collision per update
             }
         }
 
@@ -61,8 +86,27 @@ public class Particle {
         x = nextX;
         y = nextY;
 
-        // Normalize the angle
-        angle = (angle + 360) % 360;
+//        // Normalize the angle
+//        angle = (angle + 360) % 360;
+    }
+
+    private boolean checkIntersection(
+            int x1, int y1, int x2, int y2, // Line segment 1 (particle's movement)
+            int x3, int y3, int x4, int y4) { // Line segment 2 (wall)
+        // Calculate parts of the equations to check intersection
+        int den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+        if (den == 0) return false; // Lines are parallel
+
+        int tNum = (x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4);
+        int uNum = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3));
+
+        double t = tNum / (double) den;
+        double u = uNum / (double) den;
+
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+            return true; // Intersection occurs
+        }
+        return false;
     }
 
     public void draw(Graphics g) {
