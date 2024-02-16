@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="STDISCM-MCO1-Particles_Java:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/STDISCM_MCO1_Particles_Java_jar</output-path>
+    <root id="archive" name="STDISCM-MCO1-Particles_Java.jar">
+      <element id="module-output" name="STDISCM-MCO1-Particles_Java" />
+    </root>
+  </artifact>
+</component>
