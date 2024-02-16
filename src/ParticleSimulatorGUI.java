@@ -310,8 +310,8 @@ public class ParticleSimulatorGUI extends JPanel {
 
         JTextField x1Field = new JTextField("320", 5);
         JTextField y1Field = new JTextField("240", 5);
-        JTextField x2Field = new JTextField("320", 5);
-        JTextField y2Field = new JTextField("480", 5);
+        JTextField x2Field = new JTextField("640", 5);
+        JTextField y2Field = new JTextField("560", 5);
         JButton addButton = new JButton("Add Wall");
 
         addButton.addActionListener(e->{
