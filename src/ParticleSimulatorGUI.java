@@ -187,12 +187,12 @@ public class ParticleSimulatorGUI extends JPanel {
     private JPanel createPanelForLinearParticles() {
         JPanel panel = new JPanel(new FlowLayout());
 
-        JTextField nField = new JTextField("1", 5);
-        JTextField startXField = new JTextField("10", 5);
-        JTextField startYField = new JTextField("400", 5);
-        JTextField endXField = new JTextField("1280", 5);
-        JTextField endYField = new JTextField("720", 5);
-        JTextField velocityField = new JTextField("7", 5);
+        JTextField nField = new JTextField("200", 5);
+        JTextField startXField = new JTextField("0", 5);
+        JTextField startYField = new JTextField("300", 5);
+        JTextField endXField = new JTextField("10", 5);
+        JTextField endYField = new JTextField("400", 5);
+        JTextField velocityField = new JTextField("2000", 5);
         JTextField angleField = new JTextField("0", 5);
         JButton addButton = new JButton("Add Linear");
 
@@ -234,7 +234,7 @@ public class ParticleSimulatorGUI extends JPanel {
         JTextField startYField = new JTextField("360", 5); // Center Y
         JTextField startAngleField = new JTextField("0", 5);
         JTextField endAngleField = new JTextField("360", 5);
-        JTextField velocityField = new JTextField("10", 5);
+        JTextField velocityField = new JTextField("750", 5);
         JButton addButton = new JButton("Add Angular");
 
         addButton.addActionListener(e -> {
@@ -272,8 +272,8 @@ public class ParticleSimulatorGUI extends JPanel {
         JTextField nField = new JTextField("50", 5);
         JTextField startXField = new JTextField("0", 5); // Center X
         JTextField startYField = new JTextField("0", 5); // Center Y
-        JTextField startVelocityField = new JTextField("1", 5);
-        JTextField endVelocityField = new JTextField("300", 5);
+        JTextField startVelocityField = new JTextField("500", 5);
+        JTextField endVelocityField = new JTextField("1000", 5);
         JTextField angleField = new JTextField("45", 5); // Straight up
         JButton addButton = new JButton("Add Velocity");
 
