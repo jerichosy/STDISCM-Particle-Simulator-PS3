@@ -21,6 +21,8 @@ public class ParticleSimulatorGUI extends JPanel {
     private String particleCount = "Particle Count: 0";
     private boolean isPaused = false;
 
+    private long lastUpdateTime = System.currentTimeMillis();
+
     public ParticleSimulatorGUI() {
 //        for(int i = 0; i < 100; i++) {
 //            particles.add(new Particle(
@@ -48,9 +50,13 @@ public class ParticleSimulatorGUI extends JPanel {
 
     private void updateAndRepaint() {
         if (!isPaused) {
+            long currentTime = System.currentTimeMillis();
+            double deltaTime = (currentTime - lastUpdateTime) / 1000.0; // Time in seconds
+            lastUpdateTime = currentTime;
+
             // Submit each particle's run method for parallel execution
 //        long tic = System.currentTimeMillis();
-            particles.forEach(executor::submit); // At 60k particles, this takes ~3ms
+            particles.forEach(particle -> executor.submit(() -> particle.update(deltaTime))); // At 60k particles, this takes ~3ms
 //        long toc = System.currentTimeMillis();
 //        System.out.println("Submitted all particles in " + (toc - tic) + " ms");
 

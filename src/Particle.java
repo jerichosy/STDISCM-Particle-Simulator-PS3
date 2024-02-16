@@ -2,7 +2,8 @@ import java.awt.*;
 
 // TODO: Invert Y
 // TODO: Check angle
-public class Particle implements Runnable {
+//public class Particle implements Runnable {
+public class Particle {
     private int x, y; // Position
     private double velocity;
     private double angle; // In degrees
@@ -14,16 +15,19 @@ public class Particle implements Runnable {
         this.angle = angle;
     }
 
-    @Override
-    public void run() {
-        // The run method now invokes update for using with ExecutorService
-        update();
-    }
+//    @Override
+//    public void run() {
+//        // The run method now invokes update for using with ExecutorService
+//        update();
+//    }
 
-    public void update() {
+    public void update(double deltaTime) {
+        // Convert velocity from pixels per second to pixels per update
+        double velocityPerUpdate = velocity * deltaTime;
+
         // Update the position based on velocity and angle
-        x += (int) (velocity * Math.cos(Math.toRadians(angle)));
-        y -= (int) (velocity * Math.sin(Math.toRadians(angle)));
+        x += (int) (velocityPerUpdate * Math.cos(Math.toRadians(angle)));
+        y -= (int) (velocityPerUpdate * Math.sin(Math.toRadians(angle)));
 
         // Check and handle collisions with the window boundaries
         if(x <= 0 || x >= ParticleSimulatorGUI.WINDOW_WIDTH) {
