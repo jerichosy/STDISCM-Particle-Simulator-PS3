@@ -100,9 +100,13 @@ public class ParticleSimulatorGUI extends JPanel {
         g.setColor(Color.WHITE); // White color for the text
         g.drawString(particleCount, 10, 45); // Draw Particle Count on screen
 
+        // Display pause state with dynamic color
+        g.setColor(isPaused ? Color.RED : new Color(0, 255, 0)); // Red if paused, Green if not
+        g.fillRect(5, 60, 150, 20); // Adjust size as needed
+
         // display pause state
         g.setColor(Color.WHITE);
-        g.drawString("Paused: " + isPaused, 10, 65);
+        g.drawString("Renderer Paused: " + isPaused, 10, 75);
     }
 
     public void addParticlesLinear(int n, Point startPoint, Point endPoint, double velocity, double angle) {
@@ -164,8 +168,10 @@ public class ParticleSimulatorGUI extends JPanel {
 
     }
 
-    private void togglePause(){
+    private void togglePause(JButton pauseButton){
         isPaused = !isPaused;
+        pauseButton.setText(isPaused ? "Resume Renderer" : "Pause Renderer"); // Update button text based on pause state
+        repaint();
     }
 
     private void clearScreen(){
@@ -359,9 +365,9 @@ public class ParticleSimulatorGUI extends JPanel {
         panel.add(clearScreenButton);
 
         // Pause btn
-        JButton pauseButton = new JButton("Pause");
-        pauseButton.addActionListener(e->togglePause());
-        pauseButton.setPreferredSize(new Dimension(120,30));
+        JButton pauseButton = new JButton("Pause Renderer");
+        pauseButton.addActionListener(e->togglePause(pauseButton));
+        pauseButton.setPreferredSize(new Dimension(140,30));
         panel.add(pauseButton);
 
         return panel;
