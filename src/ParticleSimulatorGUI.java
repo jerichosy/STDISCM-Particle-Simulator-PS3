@@ -134,7 +134,7 @@ public class ParticleSimulatorGUI extends JPanel {
     }
 
     public void addWall(int x1, int y1, int x2, int y2){
-        walls.add(new Wall(x1, WINDOW_HEIGHT - y1, x2, WINDOW_HEIGHT - y2));
+        walls.add(new Wall(x1, y1, x2, y2, WINDOW_HEIGHT));
         System.out.println("Wall added: (" + x1 + ", " + y1 + ") to (" + x2 + ", " + y2 + ")");
         repaint();
     }
