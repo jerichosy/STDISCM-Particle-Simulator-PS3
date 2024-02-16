@@ -11,7 +11,7 @@ This project requires at least Java 18 to run. Ensure you have Java 18 or a high
 #### Option 1: Double Click
 
 1. **Download the Jar File:**
-   - Download the `STDISCM-MCO1-Particles_Java.jar` file from the repository.
+   - Download the `STDISCM-MCO1-Particles_Java.jar` file from the [releases](https://github.com/jerichosy/STDISCM-PS1-Particles_Java/releases/tag/v1.0.0).
 
 2. **Double Click the Jar File:**
    - Locate the downloaded `STDISCM-MCO1-Particles_Java.jar` file in your file explorer.
@@ -20,7 +20,7 @@ This project requires at least Java 18 to run. Ensure you have Java 18 or a high
 #### Option 2: Command Line
 
 1. **Download the Jar File:**
-   - Download the `STDISCM-MCO1-Particles_Java.jar` file from the repository.
+   - Download the `STDISCM-MCO1-Particles_Java.jar` file from the [releases](https://github.com/jerichosy/STDISCM-PS1-Particles_Java/releases/tag/v1.0.0).
 
 2. **Open Command Prompt (Windows) or Terminal (Mac/Linux):**
    - Navigate to the directory where the `STDISCM-MCO1-Particles_Java.jar` file is located using the `cd` command.
