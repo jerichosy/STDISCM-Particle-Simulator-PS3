@@ -70,6 +70,7 @@ public class ParticleSimulatorGUI extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
 //        long tic = System.currentTimeMillis();
         for(Wall wall: walls){
             wall.draw(g);
@@ -110,7 +111,7 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             int x = startPoint.x + (int)(i * deltaX);
-            int y = startPoint.y + (int)(i * deltaY);
+            int y = WINDOW_HEIGHT - startPoint.y + (int)(i * deltaY);
             particles.add(new Particle(x, y, velocity, angle));
         }
     }
@@ -120,7 +121,7 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             double angle = startAngle + i * deltaAngle;
-            particles.add(new Particle(startPoint.x, startPoint.y, velocity, angle));
+            particles.add(new Particle(startPoint.x, WINDOW_HEIGHT - startPoint.y, velocity, angle));
         }
     }
 
@@ -129,12 +130,12 @@ public class ParticleSimulatorGUI extends JPanel {
 
         for (int i = 0; i < n; i++) {
             double velocity = startVelocity + i * deltaVelocity;
-            particles.add(new Particle(startPoint.x, startPoint.y, velocity, angle));
+            particles.add(new Particle(startPoint.x, WINDOW_HEIGHT - startPoint.y, velocity, angle));
         }
     }
 
     public void addWall(int x1, int y1, int x2, int y2){
-        walls.add(new Wall(x1, WINDOW_HEIGHT - y1, x2, WINDOW_HEIGHT - y2));
+        walls.add(new Wall(x1, y1, x2, y2));
         System.out.println("Wall added: (" + x1 + ", " + y1 + ") to (" + x2 + ", " + y2 + ")");
         repaint();
     }
