@@ -22,10 +22,10 @@ public class Client extends JPanel implements KeyListener {
     private String particleCount = "Particle Count: 0";
     private boolean isPaused = false;
 
-    private Sprite sprite = new Sprite("src/Images/sprite.png", Particle.gridWidth , Particle.gridHeight);
+    private Sprite sprite = new Sprite(Particle.gridWidth , Particle.gridHeight);
 
     private long lastUpdateTime = System.currentTimeMillis();
-    
+
 
     public Client(){
         // Swing Timer for animation
@@ -101,7 +101,7 @@ public class Client extends JPanel implements KeyListener {
                 g.fillRect(getWidth() - excessX - 8, 0, excessX, getHeight());
             }
 
-            sprite.draw(g, this);
+            sprite.draw(g);
         }
 
         // Draw a semi-transparent background for the FPS counter for better readability

@@ -22,17 +22,29 @@ public class Sprite {
     private int drawX = Particle.gridWidth *  MID_PERIPHERAL_WIDTH;
     private int drawY = Particle.gridHeight * MID_PERIPHERAL_HEIGHT;
 
+    private int red;
+    private int green;
+    private int blue;
 
-    public Sprite(String imagePath, int width, int height) {
-        this.image = new ImageIcon(imagePath);
-        this.image.setImage(this.image.getImage().getScaledInstance(width, height, Image.SCALE_DEFAULT));
+
+
+
+    public Sprite(int width, int height) {
         this.width = width;
         this.height = height;
+
+        this.red = random(225);
+        this.green = random(225);
+        this.blue = random(225);
     }
 
-    public void draw(Graphics g, Component component){
+    public static int random(int maxRange) {
+        return (int) Math.round((Math.random() * maxRange));
+    }
+
+    public void draw(Graphics g){
 //        image.paintIcon(observer, g, drawX, drawY);
-        g.setColor(Color.RED);
+        g.setColor(new Color(red, green, blue));
         g.fillOval(drawX, drawY, width, height);
     }
 
@@ -43,7 +55,7 @@ public class Sprite {
 
     public void updatePosition(int x, int y){
 
-        System.out.println("HELLO");
+//        System.out.println("HELLO");
 
         this.x += x;
         excessX = Math.max(Math.min(0, this.x - MID_PERIPHERAL_WIDTH), (this.x + MID_PERIPHERAL_WIDTH) - Client.WINDOW_WIDTH );
