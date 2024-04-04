@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,28 +27,55 @@ public class Client extends JPanel implements KeyListener {
 
     private long lastUpdateTime = System.currentTimeMillis();
 
+    private java.util.List<Thread> threads = new ArrayList<>();
+
+
 
     public Client(){
-        // Swing Timer for animation
-        // Analogy: This is just like specifying an FPS limit in a video game instead of uncapped FPS.
-        new Timer(13, e -> updateAndRepaint()).start(); // ~60 FPS
 
-        // Timer to update FPS counter every 0.5 seconds
-        new Timer(500, e -> {
-            long currentTime = System.currentTimeMillis();
-            long delta = currentTime - lastTime;
-            fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
-            //System.out.println(frames + " frames in the last " + delta + " ms");
-            frames = 0; // Reset frame count
-            lastTime = currentTime;
-        }).start();
-
-        sprite.setWillSpawn(true);
-        sprite.printPosition();
+        runUI();
 
         this.addKeyListener(this);
         this.setFocusable(true); // Set the JPanel as focusable
         this.requestFocusInWindow(); // Request focus for the JPanel
+
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                // Restore interrupted status
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+                System.err.println("Thread interrupted while waiting for completion: " + e.getMessage());
+            }
+        }
+
+    }
+
+    private void runUI(){
+        Thread uiThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // Swing Timer for animation
+                // Analogy: This is just like specifying an FPS limit in a video game instead of uncapped FPS.
+                new Timer(13, e -> updateAndRepaint()).start(); // ~60 FPS
+
+                // Timer to update FPS counter every 0.5 seconds
+                new Timer(500, e -> {
+                    long currentTime = System.currentTimeMillis();
+                    long delta = currentTime - lastTime;
+                    fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
+                    //System.out.println(frames + " frames in the last " + delta + " ms");
+                    frames = 0; // Reset frame count
+                    lastTime = currentTime;
+                }).start();
+
+                sprite.setWillSpawn(true);
+                sprite.printPosition();
+            }
+        });
+        threads.add(uiThread);
+        uiThread.start();
+
     }
 
     private void updateAndRepaint() {
