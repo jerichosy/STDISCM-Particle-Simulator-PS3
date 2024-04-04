@@ -1,5 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Sprite {
     private ImageIcon image;
@@ -25,9 +29,8 @@ public class Sprite {
     private int red;
     private int green;
     private int blue;
-
-
-
+    private final int SERVER_PORT = 4990;
+    private final String SERVER_ADDRESS = "localhost";
 
     public Sprite(int width, int height) {
         this.width = width;
@@ -55,15 +58,42 @@ public class Sprite {
 
     public void updatePosition(int x, int y){
 
-//        System.out.println("HELLO");
-
         this.x += x;
         excessX = Math.max(Math.min(0, this.x - MID_PERIPHERAL_WIDTH), (this.x + MID_PERIPHERAL_WIDTH) - Client.WINDOW_WIDTH );
 
         this.y += y;
         excessY = Math.max(Math.min(0, this.y - MID_PERIPHERAL_HEIGHT), (this.y + MID_PERIPHERAL_HEIGHT) - Client.WINDOW_HEIGHT);
 
-        printPosition();
+        sendDataToServer();
+
+    }
+
+    private void sendDataToServer() {
+        try {
+            DatagramSocket serverSocket = new DatagramSocket();
+
+            byte[] data = new byte[8];
+            ByteBuffer.wrap(data).putInt(x).putInt(y);
+
+            InetAddress serverAddress = InetAddress.getByName(SERVER_ADDRESS);
+
+            DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, SERVER_PORT);
+
+            serverSocket.send(packet);
+            
+            serverSocket.close();
+
+            printSentCoordinates(data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void printSentCoordinates(byte[] data) {
+        int sentX = ByteBuffer.wrap(data, 0,4).getInt();
+        int sentY = ByteBuffer.wrap(data, 4,4).getInt();
+
+        System.out.println("New coordinates (" + sentX + ", " + sentY + ") sent to server.");
     }
 
     public int getX() {
@@ -73,14 +103,11 @@ public class Sprite {
     public int getY() {
         return y;
     }
-
-
     public void printPosition(){
         System.out.printf(
                 "Sprite (X: %d, Y: %d, User Y: %d), Excess (X: %d, Y: %d)%n", x, y, Client.WINDOW_HEIGHT - y, excessX, excessY
         );
     }
-
     public int getExcessX() {
         return excessX;
     }

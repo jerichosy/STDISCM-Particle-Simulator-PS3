@@ -1,7 +1,7 @@
 public class Ports {
 
-   public static final int RES_REP = 5000;
-   public static final int FOR_PARTICLE = 5001;
+   public static final int RES_REP = 4990;
+   public static final int FOR_PARTICLE = 4991;
 
-   public static final int FOR_SPRITE = 5002;
+   public static final int FOR_SPRITE = 4992;
 }
