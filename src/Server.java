@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import javax.swing.*;
 import java.awt.*;
@@ -113,7 +114,7 @@ public class Server extends JPanel {
         private final BlockingQueue<ReqResForm> requests;
 
         private final DatagramSocket socket;
-        private final AtomicBoolean paricleSendingGoing = new AtomicBoolean(false);
+        private final AtomicBoolean particleSendingGoing = new AtomicBoolean(false);
 
         private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
@@ -136,19 +137,6 @@ public class Server extends JPanel {
                         case "update_sprite": executor.submit(() -> performUpdateSprite(form));
                         case "synch": executor.submit(() -> performSynchParticles(form));
                     }
-//                    switch (form.getType()) {
-//                        case "new":
-//                            performNewClientProcedure(form);
-//                            break;
-//                        case "update_sprite":
-//                            performUpdateSprite(form);
-//                            break;
-//                        case "synch":
-//                            performSynchParticles(form);
-//                            break;
-//                    }
-
-
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -157,7 +145,38 @@ public class Server extends JPanel {
         }
 
         private void performSynchParticles(ReqResForm form) {
+            if (!particleSendingGoing.compareAndSet(false, true)) {
+                try {
+
+                    //get particles from server
+                    // Create a Gson object
+                    Gson gson = new GsonBuilder()
+                            .excludeFieldsWithoutExposeAnnotation()
+                            .create();
+
+                    //@@TODO: GET PARTICLES OUTSIDE FORMHANDLE
+                    //@TODO: (Executor Service) 8 Threads access particle list inside server
+                    //@TODO: for each particle -->
+                    //Synch to requesting clients ONLY  !!!!!!!!!!!!!!!!!!!!!!
+                    for ( Particle particle : particles   ) { /*InetAddress clientAddress : clients.keySet()  -- Get in form.getAddress */
+                        //selected particle
+                        String data = gson.toJson(particle);
+                        String jsonString = gson.toJson(new ReqResForm("synch", data));
+                        byte[] sendData = jsonString.getBytes();
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), Ports.FOR_PARTICLE.getPortNumber());
+                        socket.send(sendPacket);
+
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    particleSendingGoing.set(false);
+                }
+            } else {
+                requests.add(form);
+            }
         }
+
 
         private void performUpdateSprite(ReqResForm form) {
             // Extract the updated sprite information from the form data
