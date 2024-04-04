@@ -239,9 +239,9 @@ public class Server extends JPanel {
             particle.draw(g); // Let each particle draw itself
         } // At 60k particles, this takes 110-120ms
 
-        // Now, let's render each client's sprite
+        // Render each client's sprite
         for (Sprite sprite : clients.values()) {
-            sprite.drawServer(g); // Assume Sprite has a draw method similar to Particle
+            sprite.drawServer(g); // call the method to draw it from the server's perspective
         }
 
 
