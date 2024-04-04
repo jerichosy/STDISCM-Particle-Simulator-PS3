@@ -1,9 +1,13 @@
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Server extends JPanel {
     public static final int WINDOW_WIDTH = 1280;
@@ -19,21 +23,122 @@ public class Server extends JPanel {
 
     private long lastUpdateTime = System.currentTimeMillis();
 
+    private List<Thread> threads = new ArrayList<>();
+
+
     public Server() {
 
-        // Swing Timer for animation
-        // Analogy: This is just like specifying an FPS limit in a video game instead of uncapped FPS.
-        new Timer(13, e -> updateAndRepaint()).start(); // ~60 FPS
+        runUI();
+        runClientListener();
 
-        // Timer to update FPS counter every 0.5 seconds
-        new Timer(500, e -> {
-            long currentTime = System.currentTimeMillis();
-            long delta = currentTime - lastTime;
-            fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
-            System.out.println(frames + " frames in the last " + delta + " ms");
-            frames = 0; // Reset frame count
-            lastTime = currentTime;
-        }).start();
+
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                // Restore interrupted status
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+                System.err.println("Thread interrupted while waiting for completion: " + e.getMessage());
+            }
+        }
+
+    }
+
+    private void runClientListener(){
+        Thread listener = new Thread(new Runnable() {
+            private final BlockingQueue<ReqResForm> requests = new LinkedBlockingQueue<>();
+
+            @Override
+            public void run() {
+                try (DatagramSocket socket = new DatagramSocket(Ports.RES_REP)){
+
+                    Thread listener = new Thread(new FormListener(requests, socket));
+                    listener.start();
+
+                    Thread handler = new Thread(new FormHandler(requests, socket));
+                    handler.start();
+
+                } catch (SocketException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+        threads.add(listener);
+        listener.start();
+    }
+
+    private static class FormListener implements Runnable{
+
+        private final BlockingQueue<ReqResForm> requests;
+        private DatagramSocket socket;
+
+        public FormListener(BlockingQueue<ReqResForm> requests, DatagramSocket socket) {
+            this.requests = requests;
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            while (true){
+
+                try {
+                    byte[] receiveBuffer = new byte[1024];
+                    DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+                    socket.receive(receivePacket);
+                    synchronized (requests){
+                        requests.add(ReqResForm.createForm(receivePacket));
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        }
+    }
+
+    private static class FormHandler implements Runnable{
+
+        private BlockingQueue<ReqResForm> requests;
+
+        private DatagramSocket socket;
+        private AtomicBoolean paricleSendingGoing = new AtomicBoolean(false);
+
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket) {
+            this.requests = requests;
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+
+        }
+    }
+
+
+
+
+    private void runUI(){
+        Thread uiThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // Swing Timer for animation
+                // Analogy: This is just like specifying an FPS limit in a video game instead of uncapped FPS.
+                new Timer(13, e -> updateAndRepaint()).start(); // ~60 FPS
+
+                // Timer to update FPS counter every 0.5 seconds
+                new Timer(500, e -> {
+                    long currentTime = System.currentTimeMillis();
+                    long delta = currentTime - lastTime;
+                    fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
+                    System.out.println(frames + " frames in the last " + delta + " ms");
+                    frames = 0; // Reset frame count
+                    lastTime = currentTime;
+                }).start();
+            }
+        });
+        threads.add(uiThread);
+        uiThread.start();
 
     }
 
