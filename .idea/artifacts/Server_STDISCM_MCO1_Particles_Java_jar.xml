@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Server_STDISCM-MCO1-Particles_Java:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Server_STDISCM_MCO1_Particles_Java_jar</output-path>
+    <root id="archive" name="STDISCM-MCO1-Particles_Java.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/manifests/server-jar/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="STDISCM-MCO1-Particles_Java" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/gson-2.10.1.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
