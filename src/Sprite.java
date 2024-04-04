@@ -85,6 +85,7 @@ public class Sprite {
         sendDataToServer();
     }
 
+    // TODO: If may time, move this code to Client for separation of concerns
     private void sendDataToServer() {
         try {
             DatagramSocket serverSocket = new DatagramSocket();
@@ -93,7 +94,7 @@ public class Sprite {
                     .excludeFieldsWithoutExposeAnnotation()
                     .create();
             String data = gson.toJson(this);
-            String jsonString = gson.toJson(new ReqResForm("update_string", data));
+            String jsonString = gson.toJson(new ReqResForm("update_sprite", data));
 
             DatagramPacket packet = new DatagramPacket(jsonString.getBytes(), jsonString.length(), serverAddress, SERVER_PORT);
 

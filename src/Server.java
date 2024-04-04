@@ -160,6 +160,15 @@ public class Server extends JPanel {
         }
 
         private void performUpdateSprite(ReqResForm form) {
+            // Extract the updated sprite information from the form data
+            Gson gson = new Gson();
+            Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+
+            // Update the sprite in the clients map
+            clients.put(form.getAddress(), updatedSprite);
+
+            // Broadcast the updated sprite information to all connected clients
+//            broadcastUpdatedSprite(updatedSprite);
         }
 
         private void performNewClientProcedure(ReqResForm form) {
