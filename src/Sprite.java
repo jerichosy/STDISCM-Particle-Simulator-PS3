@@ -97,7 +97,7 @@ public class Sprite {
 
             DatagramPacket packet = new DatagramPacket(jsonString.getBytes(), jsonString.length(), serverAddress, SERVER_PORT);
 
-            ReqResForm.createForm(packet);
+            ReqResForm.createFormFromRequest(packet);
 
             serverSocket.send(packet);
 
