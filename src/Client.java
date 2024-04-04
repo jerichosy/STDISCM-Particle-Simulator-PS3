@@ -12,6 +12,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 public class Client extends JPanel implements KeyListener {
@@ -26,7 +27,7 @@ public class Client extends JPanel implements KeyListener {
     private String particleCount = "Particle Count: 0";
     private boolean isPaused = false;
 
-    private Sprite sprite = new Sprite(Particle.gridWidth , Particle.gridHeight);
+    private Sprite sprite = new Sprite(Particle.gridWidth , Particle.gridHeight, UUID.randomUUID().toString());
 
     private long lastUpdateTime = System.currentTimeMillis();
 
@@ -73,8 +74,7 @@ public class Client extends JPanel implements KeyListener {
     private void registerWithServer() throws UnknownHostException {
         // Create a 'new' request ReqResForm with the sprite information
         Gson gson = new Gson();
-        Sprite sprite = new Sprite(100, 100); // Example sprite
-        String spriteData = gson.toJson(sprite);
+        String spriteData = gson.toJson(sprite);  // sprite already instantiated in the field declaration
         ReqResForm form = new ReqResForm("new", spriteData);
 
         // Send the request to the server via Port A

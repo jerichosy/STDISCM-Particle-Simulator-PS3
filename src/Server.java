@@ -5,7 +5,6 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +31,7 @@ public class Server extends JPanel {
     private List<Thread> threads = new ArrayList<>();
 
 
-    private Map<InetAddress, Sprite> clients = new HashMap<>();
+    private Map<String, Sprite> clients = new HashMap<String, Sprite>();
 
 
     public Server() {
@@ -118,9 +117,9 @@ public class Server extends JPanel {
         private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
 
-        private final Map<InetAddress, Sprite> clients;
+        private final Map<String, Sprite> clients;
 
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<InetAddress, Sprite> clients) {
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<String, Sprite> clients) {
             this.requests = requests;
             this.socket = socket;
             this.clients = clients;
@@ -165,7 +164,7 @@ public class Server extends JPanel {
             Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
 
             // Update the sprite in the clients map
-            clients.put(form.getAddress(), updatedSprite);
+            clients.put(updatedSprite.getClientId(), updatedSprite);
 
             // Broadcast the updated sprite information to all connected clients
 //            broadcastUpdatedSprite(updatedSprite);
@@ -177,7 +176,7 @@ public class Server extends JPanel {
             Sprite sprite = gson.fromJson(form.getData(), Sprite.class);
 
             // Add the sprite to the clients HashMap using the client's address as the key
-            clients.put(form.getAddress(), sprite);
+            clients.put(sprite.getClientId(), sprite);
 
             // Send a response to the client to confirm the registration
             String responseData = gson.toJson("OK");
@@ -211,6 +210,7 @@ public class Server extends JPanel {
                     long delta = currentTime - lastTime;
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
 //                    System.out.println(frames + " frames in the last " + delta + " ms");
+                    System.out.println(clients.values());
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();

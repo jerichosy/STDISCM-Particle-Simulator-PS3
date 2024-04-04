@@ -14,6 +14,8 @@ import java.util.Arrays;
 public class Sprite {
 //    private ImageIcon image;
     @Expose
+    private String clientId;
+    @Expose
     private int x = Client.WINDOW_WIDTH / 2;
     @Expose
     private int y = Client.WINDOW_HEIGHT / 2;
@@ -42,13 +44,18 @@ public class Sprite {
     private final int SERVER_PORT = 4990;
     private final String SERVER_ADDRESS = "localhost";
 
-    public Sprite(int width, int height) {
+    public Sprite(int width, int height, String clientId) {
         this.width = width;
         this.height = height;
+        this.clientId = clientId;
 
         this.red = random(225);
         this.green = random(225);
         this.blue = random(225);
+    }
+
+    public String getClientId() {
+        return clientId;
     }
 
     public static int random(int maxRange) {
@@ -144,6 +151,16 @@ public class Sprite {
         this.willSpawn = willSpawn;
     }
 
+    @Override
+    public String toString() {
+        return "Sprite{" +
+                "clientId='" + clientId + '\'' +
+                ", x=" + x +
+                ", y=" + y +
+                ", width=" + width +
+                ", height=" + height +
+                '}';
+    }
 }
 
 // UL -> X: 623,  Y: 350
