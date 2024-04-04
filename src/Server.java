@@ -1,15 +1,15 @@
 import com.google.gson.Gson;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,6 +32,7 @@ public class Server extends JPanel {
 
 
     private Map<String, Sprite> clients = new HashMap<String, Sprite>();
+    private Map<ClientKey, String> clientAddresses = new HashMap<>();
 
 
     public Server() {
@@ -65,7 +66,7 @@ public class Server extends JPanel {
                     Thread listener = new Thread(new FormListener(requests, socket));
                     listener.start();
 
-                    Thread handler = new Thread(new FormHandler(requests, socket, clients));
+                    Thread handler = new Thread(new FormHandler(requests, socket, clients, clientAddresses));
                     handler.start();
 
 
@@ -118,11 +119,13 @@ public class Server extends JPanel {
 
 
         private final Map<String, Sprite> clients;
+        private final Map<ClientKey, String> clientAddresses;
 
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<String, Sprite> clients) {
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<String, Sprite> clients, Map<ClientKey, String> clientAddresses) {
             this.requests = requests;
             this.socket = socket;
             this.clients = clients;
+            this.clientAddresses = clientAddresses;
         }
 
         @Override
@@ -167,7 +170,38 @@ public class Server extends JPanel {
             clients.put(updatedSprite.getClientId(), updatedSprite);
 
             // Broadcast the updated sprite information to all connected clients
-//            broadcastUpdatedSprite(updatedSprite);
+            broadcastUpdatedSprite(updatedSprite);
+        }
+
+        private void broadcastUpdatedSprite(Sprite updatedSprite) {
+            // Create an 'update' response ReqResForm with the updated sprite information
+            Gson gson = new Gson();
+            String spriteData = gson.toJson(updatedSprite);
+            ReqResForm responseForm = new ReqResForm("update", spriteData);
+            byte[] sendData = gson.toJson(responseForm).getBytes();
+
+            // Send the updated sprite information to all connected clients
+            for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
+                String clientId = entry.getKey();
+                ClientKey clientKey = getClientKey(clientId);
+                if (clientKey != null) {
+                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
+                    try {
+                        socket.send(sendPacket);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+        private ClientKey getClientKey(String clientId) {
+            for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
+                if (entry.getValue().equals(clientId)) {
+                    return entry.getKey();
+                }
+            }
+            return null;
         }
 
         private void performNewClientProcedure(ReqResForm form) {
@@ -177,6 +211,10 @@ public class Server extends JPanel {
 
             // Add the sprite to the clients HashMap using the client's address as the key
             clients.put(sprite.getClientId(), sprite);
+
+            // Add the client's address and port to the clientAddresses HashMap
+            ClientKey clientKey = new ClientKey(form.getAddress(), form.getPort());
+            clientAddresses.put(clientKey, sprite.getClientId());
 
             // Send a response to the client to confirm the registration
             String responseData = gson.toJson("OK");
@@ -193,8 +231,28 @@ public class Server extends JPanel {
 
     }
 
+    private static class ClientKey {
+        private InetAddress address;
+        private int port;
 
+        public ClientKey(InetAddress address, int port) {
+            this.address = address;
+            this.port = port;
+        }
 
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            ClientKey other = (ClientKey) obj;
+            return port == other.port && Objects.equals(address, other.address);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(address, port);
+        }
+    }
 
     private void runUI(){
         Thread uiThread = new Thread(new Runnable() {
