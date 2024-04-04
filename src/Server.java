@@ -120,6 +120,8 @@ public class Server extends JPanel {
                     ReqResForm form = requests.take();
                     switch (form.getType()){
                         case "new": executor.submit(() -> performNewClientProcedure(form));
+                        case "update_sprite": executor.submit(() -> performUpdateSprite(form));
+                        case "synch": executor.submit(() -> performSynchParticles(form));
                     }
 
 
@@ -128,6 +130,12 @@ public class Server extends JPanel {
                 }
             }
 
+        }
+
+        private void performSynchParticles(ReqResForm form) {
+        }
+
+        private void performUpdateSprite(ReqResForm form) {
         }
 
         private void performNewClientProcedure(ReqResForm form) {
