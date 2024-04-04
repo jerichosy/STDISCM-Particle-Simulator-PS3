@@ -50,13 +50,16 @@ public class Server extends JPanel {
 
             @Override
             public void run() {
-                try (DatagramSocket socket = new DatagramSocket(Ports.RES_REP)){
+                DatagramSocket socket = null;
+                try {
+                    socket = new DatagramSocket(Ports.RES_REP);
 
                     Thread listener = new Thread(new FormListener(requests, socket));
                     listener.start();
 
                     Thread handler = new Thread(new FormHandler(requests, socket));
                     handler.start();
+
 
                 } catch (SocketException e) {
                     e.printStackTrace();
@@ -81,7 +84,6 @@ public class Server extends JPanel {
         @Override
         public void run() {
             while (true){
-
                 try {
                     byte[] receiveBuffer = new byte[1024];
                     DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
@@ -99,10 +101,12 @@ public class Server extends JPanel {
 
     private static class FormHandler implements Runnable{
 
-        private BlockingQueue<ReqResForm> requests;
+        private final BlockingQueue<ReqResForm> requests;
 
-        private DatagramSocket socket;
-        private AtomicBoolean paricleSendingGoing = new AtomicBoolean(false);
+        private final DatagramSocket socket;
+        private final AtomicBoolean paricleSendingGoing = new AtomicBoolean(false);
+
+        private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
         public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket) {
             this.requests = requests;
@@ -111,8 +115,27 @@ public class Server extends JPanel {
 
         @Override
         public void run() {
+            while (true){
+                try {
+                    ReqResForm form = requests.take();
+                    switch (form.getType()){
+                        case "new": executor.submit(() -> performNewClientProcedure(form));
+                    }
+
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
 
         }
+
+        private void performNewClientProcedure(ReqResForm form) {
+
+
+        }
+
+
     }
 
 
