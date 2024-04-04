@@ -84,8 +84,6 @@ public class Particle {
     }
 
     public void draw(Graphics g, int spriteX, int spriteY, int spriteExX, int spriteExY) {
-
-
         // Calculate the drawX and drawY based on the sprite's position
         int drawX = (spriteX) + (x - spriteX + (spriteExX * -1)) * (gridWidth) - (gridWidth / 2);
         int drawY = (spriteY) + (y - spriteY + (spriteExY * -1)) * (gridHeight) - (gridHeight / 2);
@@ -98,6 +96,12 @@ public class Particle {
 //                System.out.printf("Particle X: %d, Particle Y: %d%n", x, y);
         }
     }
+
+    public void draw(Graphics g) {
+        g.fillOval(x, y, 5, 5); // Draw particle as a small circle
+    }
+
+    
 
     // Getter methods to use in the GUI for drawing
     public int getX() {
