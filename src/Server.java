@@ -52,7 +52,7 @@ public class Server extends JPanel {
             public void run() {
                 DatagramSocket socket = null;
                 try {
-                    socket = new DatagramSocket(Ports.RES_REP);
+                    socket = new DatagramSocket(Ports.RES_REP.getPortNumber());
 
                     Thread listener = new Thread(new FormListener(requests, socket));
                     listener.start();

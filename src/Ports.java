@@ -1,7 +1,15 @@
-public class Ports {
+public enum Ports {
+   RES_REP(4990),
+   FOR_PARTICLE(4991),
+   FOR_SPRITE(4992);
 
-   public static final int RES_REP = 4990;
-   public static final int FOR_PARTICLE = 4991;
+   private int portNumber;
 
-   public static final int FOR_SPRITE = 4992;
+   Ports(int portNumber) {
+      this.portNumber = portNumber;
+   }
+
+   public int getPortNumber() {
+      return portNumber;
+   }
 }
