@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import com.google.gson.annotations.Expose;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -7,7 +8,9 @@ public class ReqResForm {
 
     private InetAddress address;
     private int port;
+    @Expose
     private String type;
+    @Expose
     private String data;
 
 

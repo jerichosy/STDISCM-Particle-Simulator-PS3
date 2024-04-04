@@ -1,9 +1,21 @@
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
+
+import com.google.gson.annotations.Expose;
+
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.net.*;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Sprite {
 //    private ImageIcon image;
+    @Expose
     private int x = Client.WINDOW_WIDTH / 2;
+    @Expose
     private int y = Client.WINDOW_HEIGHT / 2;
     private int width;
     private int height;
@@ -21,13 +33,14 @@ public class Sprite {
 
     private int drawX = Particle.gridWidth *  MID_PERIPHERAL_WIDTH;
     private int drawY = Particle.gridHeight * MID_PERIPHERAL_HEIGHT;
-
+    @Expose
     private int red;
+    @Expose
     private int green;
+    @Expose
     private int blue;
-
-
-
+    private final int SERVER_PORT = 4990;
+    private final String SERVER_ADDRESS = "localhost";
 
     public Sprite(int width, int height) {
         this.width = width;
@@ -69,7 +82,38 @@ public class Sprite {
         excessY = Math.max(Math.min(0, this.y - MID_PERIPHERAL_HEIGHT), (this.y + MID_PERIPHERAL_HEIGHT) - Client.WINDOW_HEIGHT);
 
         printPosition();
+        sendDataToServer();
     }
+
+    private void sendDataToServer() {
+        try {
+            DatagramSocket serverSocket = new DatagramSocket();
+            InetAddress serverAddress = InetAddress.getByName(SERVER_ADDRESS);
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .create();
+            String data = gson.toJson(this);
+            String jsonString = gson.toJson(new ReqResForm("update_string", data));
+
+            DatagramPacket packet = new DatagramPacket(jsonString.getBytes(), jsonString.length(), serverAddress, SERVER_PORT);
+
+            ReqResForm.createForm(packet);
+
+            serverSocket.send(packet);
+
+            serverSocket.close();
+
+            System.out.println("sent to server: " + jsonString);
+
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+//    private void sendDataToServer(){
+//        ReqResForm reqResForm = new ReqResForm(InetAddress.getByAddress(SERVER_ADDRESS), 4990, "update_sprite", );
+//    }
 
     public int getX() {
         return x;
@@ -78,14 +122,11 @@ public class Sprite {
     public int getY() {
         return y;
     }
-
-
     public void printPosition(){
         System.out.printf(
                 "Sprite (X: %d, Y: %d, User Y: %d), Excess (X: %d, Y: %d)%n", x, y, Client.WINDOW_HEIGHT - y, excessX, excessY
         );
     }
-
     public int getExcessX() {
         return excessX;
     }

@@ -12,13 +12,9 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class Client extends JPanel implements KeyListener {
-
-
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
     private java.util.List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
@@ -38,6 +34,7 @@ public class Client extends JPanel implements KeyListener {
 
 
     private String serverAddress;
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     public Client(String serverAddress) throws UnknownHostException {
         this.serverAddress = serverAddress;
@@ -59,6 +56,18 @@ public class Client extends JPanel implements KeyListener {
             }
         }
 
+        scheduleParticleUpdate();
+
+    }
+
+    private void scheduleParticleUpdate() {
+        scheduler.scheduleAtFixedRate(this::requestUpdatedParticles, 0, 2, TimeUnit.SECONDS);
+    }
+
+    private void requestUpdatedParticles() {
+        System.out.println("Requesting updated particles from server...");
+
+        // fetchUpdatedParticlesFromServer();
     }
 
     private void registerWithServer() throws UnknownHostException {
