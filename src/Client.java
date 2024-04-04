@@ -1,9 +1,16 @@
+import com.google.gson.Gson;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -30,10 +37,13 @@ public class Client extends JPanel implements KeyListener {
     private java.util.List<Thread> threads = new ArrayList<>();
 
 
+    private String serverAddress;
 
-    public Client(){
+    public Client(String serverAddress) throws UnknownHostException {
+        this.serverAddress = serverAddress;
 
         runUI();
+        registerWithServer();
 
         this.addKeyListener(this);
         this.setFocusable(true); // Set the JPanel as focusable
@@ -49,6 +59,25 @@ public class Client extends JPanel implements KeyListener {
             }
         }
 
+    }
+
+    private void registerWithServer() throws UnknownHostException {
+        // Create a 'new' request ReqResForm with the sprite information
+        Gson gson = new Gson();
+        Sprite sprite = new Sprite(100, 100); // Example sprite
+        String spriteData = gson.toJson(sprite);
+        ReqResForm form = new ReqResForm("new", spriteData);
+
+        // Send the request to the server via Port A
+        byte[] sendData = gson.toJson(form).getBytes();
+        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(serverAddress), Ports.RES_REP.getPortNumber());
+        try {
+            DatagramSocket socket = new DatagramSocket();
+            socket.send(sendPacket);
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void runUI(){
@@ -218,44 +247,53 @@ public class Client extends JPanel implements KeyListener {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Particle Simulator");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            String serverAddress = JOptionPane.showInputDialog("Enter the server's IP address:");
+            if (serverAddress != null && !serverAddress.isEmpty()) {
 
-            // Disable default button action
-            frame.getRootPane().setDefaultButton(null);
+                JFrame frame = new JFrame("Particle Simulator");
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-            // Create a container panel with BoxLayout along the Y_AXIS
-            JPanel containerPanel = new JPanel();
-            containerPanel.setLayout(new BoxLayout(containerPanel, BoxLayout.Y_AXIS));
+                // Disable default button action
+                frame.getRootPane().setDefaultButton(null);
 
-            Client simulatorGUI = new Client();
-            simulatorGUI.setPreferredSize(new Dimension(Client.WINDOW_WIDTH, Client.WINDOW_HEIGHT));
+                // Create a container panel with BoxLayout along the Y_AXIS
+                JPanel containerPanel = new JPanel();
+                containerPanel.setLayout(new BoxLayout(containerPanel, BoxLayout.Y_AXIS));
 
-//            // Setup and add the control panel at the top
-//            JPanel controlPanel = new JPanel();
-//            controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-//            simulatorGUI.setupControlPanel(controlPanel);
+                Client simulatorGUI = null;
+                try {
+                    simulatorGUI = new Client(serverAddress);
+                } catch (UnknownHostException e) {
+                    throw new RuntimeException(e);
+                }
+                simulatorGUI.setPreferredSize(new Dimension(Client.WINDOW_WIDTH, Client.WINDOW_HEIGHT));
 
-
-
-
-//
-//            simulatorGUI.setFocusable(true);
-//            simulatorGUI.requestFocusInWindow();
-            containerPanel.add(simulatorGUI);
-
-//            // Add the control panel and simulatorGUI to the containerPanel
-//            containerPanel.add(controlPanel);
+                //            // Setup and add the control panel at the top
+                //            JPanel controlPanel = new JPanel();
+                //            controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+                //            simulatorGUI.setupControlPanel(controlPanel);
 
 
+                //
+                //            simulatorGUI.setFocusable(true);
+                //            simulatorGUI.requestFocusInWindow();
+                containerPanel.add(simulatorGUI);
 
-            frame.add(containerPanel);  // Add the containerPanel to the frame
+                //            // Add the control panel and simulatorGUI to the containerPanel
+                //            containerPanel.add(controlPanel);
 
 
-            frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setResizable(false);
-            frame.setVisible(true);
+                frame.add(containerPanel);  // Add the containerPanel to the frame
+
+
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.setResizable(false);
+                frame.setVisible(true);
+            } else {
+                System.out.println("Server address not provided. Exiting.");
+                System.exit(0);
+            }
         });
     }
 

@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class Sprite {
-    private ImageIcon image;
+//    private ImageIcon image;
     private int x = Client.WINDOW_WIDTH / 2;
     private int y = Client.WINDOW_HEIGHT / 2;
     private int width;

@@ -1,11 +1,16 @@
+import com.google.gson.Gson;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,11 +24,15 @@ public class Server extends JPanel {
     private int frames = 0;
     private String fps = "FPS: 0";
     private String particleCount = "Particle Count: 0";
+    private String clientCount = "Client connected: 0";
     private boolean isPaused = false;
 
     private long lastUpdateTime = System.currentTimeMillis();
 
     private List<Thread> threads = new ArrayList<>();
+
+
+    private Map<InetAddress, Sprite> clients = new HashMap<>();
 
 
     public Server() {
@@ -57,7 +66,7 @@ public class Server extends JPanel {
                     Thread listener = new Thread(new FormListener(requests, socket));
                     listener.start();
 
-                    Thread handler = new Thread(new FormHandler(requests, socket));
+                    Thread handler = new Thread(new FormHandler(requests, socket, clients));
                     handler.start();
 
 
@@ -108,9 +117,13 @@ public class Server extends JPanel {
 
         private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket) {
+
+        private final Map<InetAddress, Sprite> clients;
+
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<InetAddress, Sprite> clients) {
             this.requests = requests;
             this.socket = socket;
+            this.clients = clients;
         }
 
         @Override
@@ -123,6 +136,17 @@ public class Server extends JPanel {
                         case "update_sprite": executor.submit(() -> performUpdateSprite(form));
                         case "synch": executor.submit(() -> performSynchParticles(form));
                     }
+//                    switch (form.getType()) {
+//                        case "new":
+//                            performNewClientProcedure(form);
+//                            break;
+//                        case "update_sprite":
+//                            performUpdateSprite(form);
+//                            break;
+//                        case "synch":
+//                            performSynchParticles(form);
+//                            break;
+//                    }
 
 
                 } catch (InterruptedException e) {
@@ -139,8 +163,23 @@ public class Server extends JPanel {
         }
 
         private void performNewClientProcedure(ReqResForm form) {
+            // Extract the sprite information from the form data
+            Gson gson = new Gson();
+            Sprite sprite = gson.fromJson(form.getData(), Sprite.class);
 
+            // Add the sprite to the clients HashMap using the client's address as the key
+            clients.put(form.getAddress(), sprite);
 
+            // Send a response to the client to confirm the registration
+            String responseData = gson.toJson("OK");
+            ReqResForm responseForm = new ReqResForm("new", responseData);
+            byte[] sendData = gson.toJson(responseForm).getBytes();
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), form.getPort());
+            try {
+                socket.send(sendPacket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
 
@@ -162,7 +201,7 @@ public class Server extends JPanel {
                     long currentTime = System.currentTimeMillis();
                     long delta = currentTime - lastTime;
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
-                    System.out.println(frames + " frames in the last " + delta + " ms");
+//                    System.out.println(frames + " frames in the last " + delta + " ms");
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();
@@ -185,6 +224,9 @@ public class Server extends JPanel {
             // Update particle count string with the current size of the particles list
             particleCount = "Particle Count: " + particles.size();
 
+            // Update client count string with the current size of the client hashmap
+            clientCount = "Clients connected: " + clients.size();
+
             repaint(); // Re-draw GUI with updated particle positions
         }
     }
@@ -196,6 +238,11 @@ public class Server extends JPanel {
         for (Particle particle : particles) {
             particle.draw(g); // Let each particle draw itself
         } // At 60k particles, this takes 110-120ms
+
+        // Now, let's render each client's sprite
+        for (Sprite sprite : clients.values()) {
+            sprite.drawServer(g); // Assume Sprite has a draw method similar to Particle
+        }
 
 
         frames++; // Increment frame count
@@ -215,6 +262,14 @@ public class Server extends JPanel {
         // Set the color for the Particle Count text
         g.setColor(Color.WHITE); // White color for the text
         g.drawString(particleCount, 10, 45); // Draw Particle Count on screen
+
+        // Draw a semi-transparent background for the Client Count counter for better readability
+        g.setColor(new Color(0, 0, 0, 128)); // Black with 50% opacity
+        g.fillRect(5, 55, 150, 20); // Adjust the size according to your needs
+
+        // Set the color for the Particle Count text
+        g.setColor(Color.WHITE); // White color for the text
+        g.drawString(clientCount, 10, 70); // Draw Client Count on screen
 
 //        // Display pause state with dynamic color
 //        g.setColor(isPaused ? Color.RED : new Color(0, 255, 0)); // Red if paused, Green if not
