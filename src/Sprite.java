@@ -42,13 +42,18 @@ public class Sprite {
         return (int) Math.round((Math.random() * maxRange));
     }
 
-    public void draw(Graphics g){
+    public void drawClient(Graphics g){
 //        image.paintIcon(observer, g, drawX, drawY);
         g.setColor(new Color(red, green, blue));
         g.fillOval(drawX, drawY, width, height);
     }
 
-    public  void move(int dx, int dy){
+    public void drawServer(Graphics g) {
+        g.setColor(new Color(red, green, blue));
+        g.fillOval(x, y, 5, 5);
+    }
+
+        public  void move(int dx, int dy){
         drawX += dx;
         drawY += dy;
     }

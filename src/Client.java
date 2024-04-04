@@ -129,7 +129,7 @@ public class Client extends JPanel implements KeyListener {
                 g.fillRect(getWidth() - excessX - 8, 0, excessX, getHeight());
             }
 
-            sprite.draw(g);
+            sprite.drawClient(g);
         }
 
         // Draw a semi-transparent background for the FPS counter for better readability
