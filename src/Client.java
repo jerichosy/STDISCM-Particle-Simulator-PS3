@@ -146,12 +146,12 @@ public class Client extends JPanel implements KeyListener {
         g.setColor(Color.WHITE); // White color for the text
         g.drawString(particleCount, 10, 45); // Draw Particle Count on screen
 
-        // Draw a background with dynamic color for the pause state for better readability
-        g.setColor(isPaused ? Color.RED : new Color(0, 255, 0)); // Red if paused, Green if not
-        g.fillRect(5, 55, 150, 20); // Adjust size as needed
-        // Set the color for the pause state text
-        g.setColor(Color.WHITE);
-        g.drawString("Renderer Paused: " + isPaused, 10, 70);
+//        // Draw a background with dynamic color for the pause state for better readability
+//        g.setColor(isPaused ? Color.RED : new Color(0, 255, 0)); // Red if paused, Green if not
+//        g.fillRect(5, 55, 150, 20); // Adjust size as needed
+//        // Set the color for the pause state text
+//        g.setColor(Color.WHITE);
+//        g.drawString("Renderer Paused: " + isPaused, 10, 70);
 
         // Draw a semi-transparent background for the Developer/Explorer mode for better readability
         g.setColor(new Color(0, 0, 0, 128)); // Black with 50% opacity
@@ -171,45 +171,45 @@ public class Client extends JPanel implements KeyListener {
 
     }
 
-    private void setupControlPanel(JPanel panel) {
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-
-        JPanel panelToggle = createPanelForClearAndPause();
-        panel.add(panelToggle);
-    }
-
-
-
-    private JPanel createPanelForClearAndPause(){
-        JPanel panel = new JPanel(new FlowLayout());
-        // Pause btn
-        JButton pauseButton = new JButton("Pause Renderer");
-        pauseButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                togglePause(pauseButton);
-            }
-        });
-        pauseButton.setPreferredSize(new Dimension(140,30));
-        panel.add(pauseButton);
-
-        System.out.println(isPaused);
-
-        return panel;
-    }
-
-
-
-    private void togglePause(JButton pauseButton){
-        isPaused = !isPaused;
-        pauseButton.setText(isPaused ? "Resume Renderer" : "Pause Renderer"); // Update button text based on pause state
-        repaint();  // This is needed for the pause state to be updated on the screen
+//    private void setupControlPanel(JPanel panel) {
+//        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 //
-        if (!isPaused){
-            this.setFocusable(true); // Set the JPanel as focusable
-            this.requestFocusInWindow(); // Request focus for the JPanel
-        }
-    }
+//        JPanel panelToggle = createPanelForClearAndPause();
+//        panel.add(panelToggle);
+//    }
+
+
+
+//    private JPanel createPanelForClearAndPause(){
+//        JPanel panel = new JPanel(new FlowLayout());
+//        // Pause btn
+//        JButton pauseButton = new JButton("Pause Renderer");
+//        pauseButton.addActionListener(new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                togglePause(pauseButton);
+//            }
+//        });
+//        pauseButton.setPreferredSize(new Dimension(140,30));
+//        panel.add(pauseButton);
+//
+//        System.out.println(isPaused);
+//
+//        return panel;
+//    }
+
+
+
+//    private void togglePause(JButton pauseButton){
+//        isPaused = !isPaused;
+//        pauseButton.setText(isPaused ? "Resume Renderer" : "Pause Renderer"); // Update button text based on pause state
+//        repaint();  // This is needed for the pause state to be updated on the screen
+////
+//        if (!isPaused){
+//            this.setFocusable(true); // Set the JPanel as focusable
+//            this.requestFocusInWindow(); // Request focus for the JPanel
+//        }
+//    }
 
 
 
@@ -231,10 +231,10 @@ public class Client extends JPanel implements KeyListener {
             Client simulatorGUI = new Client();
             simulatorGUI.setPreferredSize(new Dimension(Client.WINDOW_WIDTH, Client.WINDOW_HEIGHT));
 
-            // Setup and add the control panel at the top
-            JPanel controlPanel = new JPanel();
-            controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-            simulatorGUI.setupControlPanel(controlPanel);
+//            // Setup and add the control panel at the top
+//            JPanel controlPanel = new JPanel();
+//            controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+//            simulatorGUI.setupControlPanel(controlPanel);
 
 
 
@@ -244,8 +244,8 @@ public class Client extends JPanel implements KeyListener {
 //            simulatorGUI.requestFocusInWindow();
             containerPanel.add(simulatorGUI);
 
-            // Add the control panel and simulatorGUI to the containerPanel
-            containerPanel.add(controlPanel);
+//            // Add the control panel and simulatorGUI to the containerPanel
+//            containerPanel.add(controlPanel);
 
 
 
