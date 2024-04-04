@@ -1,3 +1,7 @@
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
@@ -6,8 +10,9 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Sprite {
-    private ImageIcon image;
+    @Expose
     private int x = Client.WINDOW_WIDTH / 2;
+    @Expose
     private int y = Client.WINDOW_HEIGHT / 2;
     private int width;
     private int height;
@@ -25,9 +30,11 @@ public class Sprite {
 
     private int drawX = Particle.gridWidth *  MID_PERIPHERAL_WIDTH;
     private int drawY = Particle.gridHeight * MID_PERIPHERAL_HEIGHT;
-
+    @Expose
     private int red;
+    @Expose
     private int green;
+    @Expose
     private int blue;
     private final int SERVER_PORT = 4990;
     private final String SERVER_ADDRESS = "localhost";
@@ -71,30 +78,32 @@ public class Sprite {
     private void sendDataToServer() {
         try {
             DatagramSocket serverSocket = new DatagramSocket();
-
-            byte[] data = new byte[8];
-            ByteBuffer.wrap(data).putInt(x).putInt(y);
-
             InetAddress serverAddress = InetAddress.getByName(SERVER_ADDRESS);
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .create();
+            String data = gson.toJson(this);
+            String jsonString = gson.toJson(new ReqResForm("update_string", data));
 
-            DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, SERVER_PORT);
+            DatagramPacket packet = new DatagramPacket(jsonString.getBytes(), jsonString.length(), serverAddress, SERVER_PORT);
+
+            ReqResForm.createForm(packet);
 
             serverSocket.send(packet);
-            
+
             serverSocket.close();
 
-            printSentCoordinates(data);
+            System.out.println("sent to server: " + jsonString);
+
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void printSentCoordinates(byte[] data) {
-        int sentX = ByteBuffer.wrap(data, 0,4).getInt();
-        int sentY = ByteBuffer.wrap(data, 4,4).getInt();
-
-        System.out.println("New coordinates (" + sentX + ", " + sentY + ") sent to server.");
-    }
+//    private void sendDataToServer(){
+//        ReqResForm reqResForm = new ReqResForm(InetAddress.getByAddress(SERVER_ADDRESS), 4990, "update_sprite", );
+//    }
 
     public int getX() {
         return x;
