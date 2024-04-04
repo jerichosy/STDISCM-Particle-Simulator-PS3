@@ -89,7 +89,7 @@ public class Server extends JPanel {
                     DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
                     socket.receive(receivePacket);
                     synchronized (requests){
-                        requests.add(ReqResForm.createForm(receivePacket));
+                        requests.add(ReqResForm.createFormFromRequest(receivePacket));
                     }
                 } catch (IOException e) {
                     throw new RuntimeException(e);

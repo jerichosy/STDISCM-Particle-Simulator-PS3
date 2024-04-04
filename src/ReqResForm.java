@@ -56,7 +56,7 @@ public class ReqResForm {
         this.data = data;
     }
 
-    public static ReqResForm createForm(DatagramPacket packet){
+    public static ReqResForm createFormFromRequest(DatagramPacket packet){
 
         // Create Gson instance
         Gson gson = new Gson();
