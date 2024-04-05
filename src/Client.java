@@ -65,7 +65,22 @@ public class Client extends JPanel implements KeyListener {
     private void requestUpdatedParticles() {
         System.out.println("Requesting updated particles from server...");
 
-        // fetchUpdatedParticlesFromServer();
+         fetchUpdatedParticlesFromServer();
+    }
+
+    private void fetchUpdatedParticlesFromServer() {
+        try {
+            DatagramSocket serverSocket;
+            serverSocket = new DatagramSocket(4991);
+
+            byte[] buffer = new byte[2048];
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
+//            particles = unpackParticles(packet.getData(), packet.getLength());
+
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void registerWithServer() throws UnknownHostException, SocketException {
