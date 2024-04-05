@@ -2,16 +2,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,7 +32,8 @@ public class Server extends JPanel {
     private List<Thread> threads = new ArrayList<>();
 
 
-    private Map<InetAddress, Sprite> clients = new HashMap<>();
+    private Map<String, Sprite> clients = new HashMap<String, Sprite>();
+    private Map<ClientKey, String> clientAddresses = new HashMap<>();
 
 
     public Server() {
@@ -66,9 +66,9 @@ public class Server extends JPanel {
 
                     Thread listener = new Thread(new FormListener(requests, socket));
                     listener.start();
-
-                    Thread handler = new Thread(new FormHandler(requests, socket, clients, particles));
-                    handler.start();
+                  
+                  Thread handler = new Thread(new FormHandler(requests, socket, clients, clientAddresses, particles));
+                  handler.start();
 
 
                 } catch (SocketException e) {
@@ -117,17 +117,19 @@ public class Server extends JPanel {
         private final AtomicBoolean particleSendingGoing = new AtomicBoolean(false);
 
         private final ExecutorService executor = Executors.newFixedThreadPool(8);
-
-
-        private final Map<InetAddress, Sprite> clients;
-        private final List<Particle> particleList;
-
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<InetAddress, Sprite> clients, List<Particle> particles) {
+      
+        private final Map<String, Sprite> clients;
+        private final Map<ClientKey, String> clientAddresses;
+      private final List<Particle> particleList;
+      
+      public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<String, Sprite> clients, Map<ClientKey, String> clientAddresses, List<Particle> particles) {
             this.requests = requests;
             this.socket = socket;
             this.clients = clients;
+            this.clientAddresses = clientAddresses;
             this.particleList = particles;
         }
+
 
         @Override
         public void run() {
@@ -186,10 +188,49 @@ public class Server extends JPanel {
             Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
 
             // Update the sprite in the clients map
-            clients.put(form.getAddress(), updatedSprite);
+            clients.put(updatedSprite.getClientId(), updatedSprite);
 
             // Broadcast the updated sprite information to all connected clients
-//            broadcastUpdatedSprite(updatedSprite);
+            broadcastUpdatedSprite(updatedSprite);
+        }
+
+        private void broadcastUpdatedSprite(Sprite updatedSprite) {
+            // Create an 'update' response ReqResForm with the updated sprite information
+            Gson gson = new Gson();
+            String spriteData = gson.toJson(updatedSprite);
+            ReqResForm responseForm = new ReqResForm("update", spriteData);
+            byte[] sendData = gson.toJson(responseForm).getBytes();
+
+            System.out.println("Broadcasting updated sprite to all clients");
+
+            // Send the updated sprite information to all connected clients except the one that sent the update
+            for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
+                String clientId = entry.getKey();
+                System.out.println("Broadcasting to Client ID: " + clientId);
+                if (!clientId.equals(updatedSprite.getClientId())) {
+                    ClientKey clientKey = getClientKey(clientId);
+                    System.out.println("Client Key: " + clientKey);
+                    Sprite sprite = entry.getValue();
+                    if (clientKey != null) {
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, sprite.getPort());
+                        try {
+                            socket.send(sendPacket);
+                            System.out.println("Sent sprite update to client: " + clientId);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+
+        private ClientKey getClientKey(String clientId) {
+            for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
+                if (entry.getValue().equals(clientId)) {
+                    return entry.getKey();
+                }
+            }
+            return null;
         }
 
         private void performNewClientProcedure(ReqResForm form) {
@@ -198,7 +239,11 @@ public class Server extends JPanel {
             Sprite sprite = gson.fromJson(form.getData(), Sprite.class);
 
             // Add the sprite to the clients HashMap using the client's address as the key
-            clients.put(form.getAddress(), sprite);
+            clients.put(sprite.getClientId(), sprite);
+
+            // Add the client's address and port to the clientAddresses HashMap
+            ClientKey clientKey = new ClientKey(form.getAddress(), sprite.getPort()); // Use the assigned port number
+            clientAddresses.put(clientKey, sprite.getClientId());
 
             // Send a response to the client to confirm the registration
             String responseData = gson.toJson("OK");
@@ -215,6 +260,28 @@ public class Server extends JPanel {
 
     }
 
+    private static class ClientKey {
+        private InetAddress address;
+        private int port;
+
+        public ClientKey(InetAddress address, int port) {
+            this.address = address;
+            this.port = port;
+        }
+      
+      @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            ClientKey other = (ClientKey) obj;
+            return port == other.port && Objects.equals(address, other.address);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(address, port);
+        }
+    }
 
     private void runUI(){
         Thread uiThread = new Thread(new Runnable() {
@@ -230,6 +297,7 @@ public class Server extends JPanel {
                     long delta = currentTime - lastTime;
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
 //                    System.out.println(frames + " frames in the last " + delta + " ms");
+                    System.out.println(clients.values());
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();
