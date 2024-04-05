@@ -9,6 +9,8 @@ import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.List;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -33,7 +35,7 @@ public class Client extends JPanel implements KeyListener {
 
     private long lastUpdateTime = System.currentTimeMillis();
 
-    private java.util.List<Thread> threads = new ArrayList<>();
+    private List<Thread> threads = new ArrayList<>();
 
 
     private String serverAddress;
@@ -159,8 +161,14 @@ public class Client extends JPanel implements KeyListener {
             }
 
         }
-
-        private void syncStart(ReqResForm form) {
+      
+      private void performParticleUpdate(ReqResForm form) {
+            Gson gson = new Gson();
+            Particle particle = gson.fromJson(form.getData(), Particle.class);
+            tempParticleList.add(particle);
+        }
+      
+      private void syncStart(ReqResForm form) {
             tempParticleList.clear();
 
         }
@@ -168,11 +176,6 @@ public class Client extends JPanel implements KeyListener {
             particleList.clear();
             particleList.addAll(tempParticleList);
         }
-
-
-
-
-
     }
 
 
