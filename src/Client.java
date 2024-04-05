@@ -1,5 +1,6 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 
 import javax.swing.*;
 import java.awt.*;
@@ -8,8 +9,11 @@ import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
@@ -42,9 +46,162 @@ public class Client extends JPanel implements KeyListener {
 
         runUI();
         registerWithServer();
+        runServerListener();
+        this.addKeyListener(this);
+        this.setFocusable(true); // Set the JPanel as focusable
+        this.requestFocusInWindow(); // Request focus for the JPanel
 
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                // Restore interrupted status
+                Thread.currentThread().interrupt(); // Restore the interrupted status
+                System.err.println("Thread interrupted while waiting for completion: " + e.getMessage());
+            }
+        }
+    }
+    private void runServerListener(){
+        Thread listener = new Thread(new Runnable() {
+            private final BlockingQueue<ReqResForm> requests = new LinkedBlockingQueue<>();
+
+            @Override
+            public void run() {
+                DatagramSocket socket = null;
+                try {
+                    socket = new DatagramSocket(Ports.RES_REP.getPortNumber());
+
+                    Thread listener = new Thread(new Client.FormListener(requests, socket));
+                    listener.start();
+
+                    Thread handler = new Thread(new Client.FormHandler(requests, socket, serverAddress, particles));
+                    handler.start();
+
+
+                } catch (SocketException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+        threads.add(listener);
+        listener.start();
+    }
+
+    private static class FormListener implements Runnable{
+
+        private final BlockingQueue<ReqResForm> requests;
+        private DatagramSocket socket;
+
+        public FormListener(BlockingQueue<ReqResForm> requests, DatagramSocket socket) {
+            this.requests = requests;
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            while (true){
+                try {
+                    byte[] receiveBuffer = new byte[1024];
+                    DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+                    socket.receive(receivePacket);
+                    synchronized (requests){
+                        requests.add(ReqResForm.createFormFromRequest(receivePacket));
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        }
+    }
+    private static class FormHandler implements Runnable{
+
+        private final BlockingQueue<ReqResForm> requests;
+
+        private final DatagramSocket socket;
+        private final AtomicBoolean particleSendingGoing = new AtomicBoolean(false);
+
+        private final ExecutorService executor = Executors.newFixedThreadPool(8);
+
+        private final java.util.List<Particle> particleList;
+
+        private final String serverAddress;
+
+        private final List<Particle> tempParticleList;
+
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket,  String serverAddress, java.util.List<Particle> particles) {
+            this.requests = requests;
+            this.socket = socket;
+            this.serverAddress = serverAddress;
+            this.particleList = particles;
+        }
+
+
+        @Override
+        public void run() {
+            while (true){
+                try {
+                    ReqResForm form = requests.take();
+                    switch (form.getType()){
+                        case "new": executor.submit(() -> addNewSpriteToList(form));
+                        case "update": executor.submit(() -> performUpdateSpriteList(form));
+                        case "particle": executor.submit(() -> performParticleUpdate(form));
+                        case "sync_start": executor.submit(() -> syncStart(form));
+                        case "sync_end": executor.submit(() -> syncEnd(form));
+
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
 
     }
+
+    private static class FormListener implements Runnable{
+
+        private final BlockingQueue<ReqResForm> requests;
+        private DatagramSocket socket;
+
+        public FormListener(BlockingQueue<ReqResForm> requests, DatagramSocket socket) {
+            this.requests = requests;
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            while (true){
+                try {
+                    byte[] receiveBuffer = new byte[1024];
+                    DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+                    socket.receive(receivePacket);
+                    synchronized (requests){
+                        requests.add(ReqResForm.createFormFromRequest(receivePacket));
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private void registerWithServer() throws UnknownHostException, SocketException {
 
