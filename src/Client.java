@@ -9,6 +9,8 @@ import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.List;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -33,7 +35,7 @@ public class Client extends JPanel implements KeyListener {
 
     private long lastUpdateTime = System.currentTimeMillis();
 
-    private java.util.List<Thread> threads = new ArrayList<>();
+    private List<Thread> threads = new ArrayList<>();
 
 
     private String serverAddress;
@@ -126,17 +128,18 @@ public class Client extends JPanel implements KeyListener {
 
         private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
-        private final java.util.List<Particle> particleList;
+        private final List<Particle> particleList;
 
         private final String serverAddress;
 
         private final List<Particle> tempParticleList = new CopyOnWriteArrayList<>();
 
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket,  String serverAddress, java.util.List<Particle> particles) {
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, String serverAddress, java.util.List<Particle> particles) {
             this.requests = requests;
             this.socket = socket;
             this.serverAddress = serverAddress;
             this.particleList = particles;
+            this.tempParticleList = particleList;
         }
 
 
@@ -147,11 +150,10 @@ public class Client extends JPanel implements KeyListener {
                     ReqResForm form = requests.take();
                     switch (form.getType()){
                         case "new": executor.submit(() -> addNewSpriteToList(form));
-                        case "update": executor.submit(() -> performUpdateSpriteList(form));
+//                         case "update": executor.submit(() -> performUpdateSpriteList(form));
                         case "particle": executor.submit(() -> performParticleUpdate(form));
                         case "sync_start": executor.submit(() -> syncStart(form));
                         case "sync_end": executor.submit(() -> syncEnd(form));
-
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -159,16 +161,29 @@ public class Client extends JPanel implements KeyListener {
             }
 
         }
-
-        private void addNewSpriteToList(ReqResForm form) {
+      
+      private void performParticleUpdate(ReqResForm form) {
+            Gson gson = new Gson();
+            Particle particle = gson.fromJson(form.getData(), Particle.class);
+            tempParticleList.add(particle);
+        }
+      
+      private void addNewSpriteToList(ReqResForm form) {
             String data = form.getData();
             Gson gson = new Gson();
             Sprite newSprite = gson.fromJson(data, Sprite.class);
 
             otherSprites.add(newSprite);
         }
-
-    }
+      
+      private void syncStart(ReqResForm form) {
+            tempParticleList.clear();
+      }
+      
+      private void syncEnd(ReqResForm form) {
+            particleList.clear();
+            particleList.addAll(tempParticleList);
+      }
 
 
 
