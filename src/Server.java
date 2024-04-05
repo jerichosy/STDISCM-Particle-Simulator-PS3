@@ -222,7 +222,7 @@ public class Server extends JPanel {
                 });
 
                 //Add the new sprite to the list (the one removed)
-                notIt.put(key, sprite);
+                notIt.put(clientID, currSprite);
 
                 ClientKey clientKey = getClientKey(key);
                 if (clientKey != null) {
@@ -244,6 +244,11 @@ public class Server extends JPanel {
                     }
                 }
             });
+
+            //add back to clients the updated sprite
+            clients.put(clientID, currSprite);
+
+
 
 //            // Create an 'update' response ReqResForm with the updated sprite information
 //            Gson gson = new Gson();
