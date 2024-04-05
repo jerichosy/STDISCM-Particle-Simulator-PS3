@@ -2,15 +2,10 @@ import com.google.gson.Gson;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -19,6 +14,7 @@ public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
     private java.util.List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+    private java.util.List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private long lastTime = System.currentTimeMillis();
@@ -37,11 +33,12 @@ public class Client extends JPanel implements KeyListener {
     private String serverAddress;
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    public Client(String serverAddress) throws UnknownHostException {
+    public Client(String serverAddress) throws UnknownHostException, SocketException {
         this.serverAddress = serverAddress;
 
         runUI();
         registerWithServer();
+        receiveUpdatedSprites();
 
         this.addKeyListener(this);
         this.setFocusable(true); // Set the JPanel as focusable
@@ -71,22 +68,81 @@ public class Client extends JPanel implements KeyListener {
         // fetchUpdatedParticlesFromServer();
     }
 
-    private void registerWithServer() throws UnknownHostException {
+    private void registerWithServer() throws UnknownHostException, SocketException {
+        // new Sprite(Particle.gridWidth , Particle.gridHeight, UUID.randomUUID().toString());
+
+        // Create a DatagramSocket with a random available port
+        DatagramSocket socket = new DatagramSocket();
+        int localPort = socket.getLocalPort();
+
         // Create a 'new' request ReqResForm with the sprite information
         Gson gson = new Gson();
-        String spriteData = gson.toJson(sprite);  // sprite already instantiated in the field declaration
+        sprite.setPort(localPort);
+        String spriteData = gson.toJson(sprite);
         ReqResForm form = new ReqResForm("new", spriteData);
 
         // Send the request to the server via Port A
         byte[] sendData = gson.toJson(form).getBytes();
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(serverAddress), Ports.RES_REP.getPortNumber());
         try {
-            DatagramSocket socket = new DatagramSocket();
             socket.send(sendPacket);
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void receiveUpdatedSprites() {
+        Thread receiverThread = new Thread(() -> {
+            try {
+                DatagramSocket socket = new DatagramSocket();
+                byte[] buffer = new byte[1024];
+
+                while (true) {
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    socket.receive(packet);
+
+                    String receivedData = new String(packet.getData(), 0, packet.getLength());
+                    System.out.println("Received sprite update: " + receivedData);
+
+                    Gson gson = new Gson();
+                    ReqResForm form = gson.fromJson(receivedData, ReqResForm.class);
+
+                    if (form.getType().equals("update")) {
+                        Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+                        updateLocalSprite(updatedSprite);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        receiverThread.start();
+    }
+
+    private void updateLocalSprite(Sprite updatedSprite) {
+        System.out.println("Updating sprite: " + updatedSprite);
+
+        if (updatedSprite.getClientId().equals(sprite.getClientId())) {
+            // Update the client's own sprite
+            sprite = updatedSprite;
+        } else {
+            boolean found = false;
+            for (int i = 0; i < otherSprites.size(); i++) {
+                Sprite localSprite = otherSprites.get(i);
+                if (localSprite.getClientId().equals(updatedSprite.getClientId())) {
+                    // TODO: Check if this if-statement is correct
+                    otherSprites.set(i, updatedSprite);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                otherSprites.add(updatedSprite);
+            }
+        }
+        repaint();
     }
 
     private void runUI(){
@@ -103,6 +159,7 @@ public class Client extends JPanel implements KeyListener {
                     long delta = currentTime - lastTime;
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
                     //System.out.println(frames + " frames in the last " + delta + " ms");
+                    System.out.println(otherSprites.size() + " sprites in the list");
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();
@@ -273,6 +330,8 @@ public class Client extends JPanel implements KeyListener {
                 try {
                     simulatorGUI = new Client(serverAddress);
                 } catch (UnknownHostException e) {
+                    throw new RuntimeException(e);
+                } catch (SocketException e) {
                     throw new RuntimeException(e);
                 }
                 simulatorGUI.setPreferredSize(new Dimension(Client.WINDOW_WIDTH, Client.WINDOW_HEIGHT));

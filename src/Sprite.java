@@ -44,6 +44,8 @@ public class Sprite {
     private final int SERVER_PORT = 4990;
     private final String SERVER_ADDRESS = "localhost";
 
+    private int port;
+
     public Sprite(int width, int height, String clientId) {
         this.width = width;
         this.height = height;
@@ -56,6 +58,14 @@ public class Sprite {
 
     public String getClientId() {
         return clientId;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 
     public static int random(int maxRange) {

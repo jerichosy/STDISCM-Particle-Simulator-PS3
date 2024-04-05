@@ -180,16 +180,24 @@ public class Server extends JPanel {
             ReqResForm responseForm = new ReqResForm("update", spriteData);
             byte[] sendData = gson.toJson(responseForm).getBytes();
 
-            // Send the updated sprite information to all connected clients
+            System.out.println("Broadcasting updated sprite to all clients");
+
+            // Send the updated sprite information to all connected clients except the one that sent the update
             for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
                 String clientId = entry.getKey();
-                ClientKey clientKey = getClientKey(clientId);
-                if (clientKey != null) {
-                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
-                    try {
-                        socket.send(sendPacket);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                System.out.println("Broadcasting to Client ID: " + clientId);
+                if (!clientId.equals(updatedSprite.getClientId())) {
+                    ClientKey clientKey = getClientKey(clientId);
+                    System.out.println("Client Key: " + clientKey);
+                    Sprite sprite = entry.getValue();
+                    if (clientKey != null) {
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, sprite.getPort());
+                        try {
+                            socket.send(sendPacket);
+                            System.out.println("Sent sprite update to client: " + clientId);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -213,7 +221,7 @@ public class Server extends JPanel {
             clients.put(sprite.getClientId(), sprite);
 
             // Add the client's address and port to the clientAddresses HashMap
-            ClientKey clientKey = new ClientKey(form.getAddress(), form.getPort());
+            ClientKey clientKey = new ClientKey(form.getAddress(), sprite.getPort()); // Use the assigned port number
             clientAddresses.put(clientKey, sprite.getClientId());
 
             // Send a response to the client to confirm the registration
