@@ -1,5 +1,6 @@
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 
 import javax.swing.*;
 import javax.swing.Timer;
@@ -13,6 +14,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Server extends JPanel {
     public static final int WINDOW_WIDTH = 1280;
@@ -192,15 +194,56 @@ public class Server extends JPanel {
             clients.put(updatedSprite.getClientId(), updatedSprite);
 //
 //            // Broadcast the updated sprite information to all connected clients
-            broadcastUpdatedSprite(updatedSprite);
+            broadcastUpdatedSprite(updatedSprite.getClientId());
         }
 
-        private void broadcastUpdatedSprite(Sprite updatedSprite) {
+        private void broadcastUpdatedSprite(String clientID) {
+            // Remove sprite from hashmap, store in temp var
+            Sprite currSprite = clients.remove(clientID);
 
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .create();
 
+           ;
 
+            //For each sprite in the hashmap:
+            clients.forEach((key, sprite) -> {
 
+                //Generate a list of all sprites other than it.
+                HashMap<String, Sprite> notIt = new HashMap<>();
+                clients.forEach((key2, sprite2)  -> {
+                    if (!key2.equals(key)){
+                        ClientKey clientKey = getClientKey(key2);
+                        if (clientKey != null)
+                            notIt.put(key2, sprite2);
+//                        System.out.println("Client Key: " + clientKey);
+                    }
+                });
 
+                //Add the new sprite to the list (the one removed)
+                notIt.put(key, sprite);
+
+                ClientKey clientKey = getClientKey(key);
+                if (clientKey != null) {
+                    //Send the list to the designated client via response =’update’
+                    JsonArray jsonArray = new JsonArray();
+                    for (Sprite value: notIt.values()){
+                        jsonArray.add(gson.toJsonTree(value));
+                    }
+
+                    String jsonString = jsonArray.getAsString();
+                    byte[] sendData = gson.toJson(new ReqResForm("update", jsonString)).getBytes();
+
+                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, sprite.getPort());
+                    try {
+                        socket.send(sendPacket);
+//                        System.out.println("Sent sprite update to client: " + clientID);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
 
 //            // Create an 'update' response ReqResForm with the updated sprite information
 //            Gson gson = new Gson();
