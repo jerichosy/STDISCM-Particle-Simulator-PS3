@@ -115,6 +115,7 @@ public class Client extends JPanel implements KeyListener {
 
         }
     }
+    
     private static class FormHandler implements Runnable{
 
         private final BlockingQueue<ReqResForm> requests;
@@ -160,33 +161,7 @@ public class Client extends JPanel implements KeyListener {
 
     }
 
-    private static class FormListener implements Runnable{
 
-        private final BlockingQueue<ReqResForm> requests;
-        private DatagramSocket socket;
-
-        public FormListener(BlockingQueue<ReqResForm> requests, DatagramSocket socket) {
-            this.requests = requests;
-            this.socket = socket;
-        }
-
-        @Override
-        public void run() {
-            while (true){
-                try {
-                    byte[] receiveBuffer = new byte[1024];
-                    DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-                    socket.receive(receivePacket);
-                    synchronized (requests){
-                        requests.add(ReqResForm.createFormFromRequest(receivePacket));
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-        }
-    }
 
 
 
