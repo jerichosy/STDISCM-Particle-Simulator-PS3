@@ -234,27 +234,56 @@ public class Server extends JPanel {
         }
 
         private void performNewClientProcedure(ReqResForm form) {
+
             // Extract the sprite information from the form data
             Gson gson = new Gson();
             Sprite sprite = gson.fromJson(form.getData(), Sprite.class);
 
+
+            // TODO: add a request='synch' to requestsQueue
+
+            // TODO: send a response='update' to that client
+            responseUpdateSprites(sprite.getClientId());
+
+            // TODO: send a response='new' to other clients
+            broadcastNewSprite(sprite);
+
+
             // Add the sprite to the clients HashMap using the client's address as the key
             clients.put(sprite.getClientId(), sprite);
-
+//
             // Add the client's address and port to the clientAddresses HashMap
             ClientKey clientKey = new ClientKey(form.getAddress(), sprite.getPort()); // Use the assigned port number
             clientAddresses.put(clientKey, sprite.getClientId());
 
-            // Send a response to the client to confirm the registration
-            String responseData = gson.toJson("OK");
-            ReqResForm responseForm = new ReqResForm("new", responseData);
-            byte[] sendData = gson.toJson(responseForm).getBytes();
-            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), form.getPort());
-            try {
-                socket.send(sendPacket);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+//            // Send a response to the client to confirm the registration
+//            String responseData = gson.toJson("OK");
+//            ReqResForm responseForm = new ReqResForm("new", responseData);
+//            byte[] sendData = gson.toJson(responseForm).getBytes();
+//            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), form.getPort());
+//            try {
+//                socket.send(sendPacket);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+        }
+
+        private void broadcastNewSprite(Sprite sprite) {
+
+            // TODO: convert sprite to string data
+            // TODO: create a reqresform type='new' data=data
+            // TODO: convert reqresform to string JSON
+            // TODO: send that JSON to all clients
+
+        }
+
+        private void responseUpdateSprites(String clientID) {
+          // TODO: get all sprites from clients as a list
+
+          // TODO: convert list to JSON via GSON
+
+            // TODO: send list back to the requesting client
+
         }
 
 
