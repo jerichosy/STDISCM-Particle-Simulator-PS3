@@ -22,7 +22,7 @@ public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
     private List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
-    private List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+    private static List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private long lastTime = System.currentTimeMillis();
@@ -150,7 +150,7 @@ public class Client extends JPanel implements KeyListener {
                     ReqResForm form = requests.take();
                     switch (form.getType()){
                         case "new": executor.submit(() -> addNewSpriteToList(form));
-                        case "update": executor.submit(() -> performUpdateSpriteList(form));
+//                         case "update": executor.submit(() -> performUpdateSpriteList(form));
                         case "particle": executor.submit(() -> performParticleUpdate(form));
                         case "sync_start": executor.submit(() -> syncStart(form));
                         case "sync_end": executor.submit(() -> syncEnd(form));
@@ -168,15 +168,22 @@ public class Client extends JPanel implements KeyListener {
             tempParticleList.add(particle);
         }
       
+      private void addNewSpriteToList(ReqResForm form) {
+            String data = form.getData();
+            Gson gson = new Gson();
+            Sprite newSprite = gson.fromJson(data, Sprite.class);
+
+            otherSprites.add(newSprite);
+        }
+      
       private void syncStart(ReqResForm form) {
             tempParticleList.clear();
-
-        }
-        private void syncEnd(ReqResForm form) {
+      }
+      
+      private void syncEnd(ReqResForm form) {
             particleList.clear();
             particleList.addAll(tempParticleList);
-        }
-    }
+      }
 
 
 
