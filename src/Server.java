@@ -183,45 +183,51 @@ public class Server extends JPanel {
 
 
         private void performUpdateSprite(ReqResForm form) {
-            // Extract the updated sprite information from the form data
-            Gson gson = new Gson();
-            Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
 
-            // Update the sprite in the clients map
-            clients.put(updatedSprite.getClientId(), updatedSprite);
 
-            // Broadcast the updated sprite information to all connected clients
-            broadcastUpdatedSprite(updatedSprite);
+//            // Extract the updated sprite information from the form data
+//            Gson gson = new Gson();
+//            Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+//
+//            // Update the sprite in the clients map
+//            clients.put(updatedSprite.getClientId(), updatedSprite);
+//
+//            // Broadcast the updated sprite information to all connected clients
+//            broadcastUpdatedSprite(updatedSprite);
         }
 
         private void broadcastUpdatedSprite(Sprite updatedSprite) {
-            // Create an 'update' response ReqResForm with the updated sprite information
-            Gson gson = new Gson();
-            String spriteData = gson.toJson(updatedSprite);
-            ReqResForm responseForm = new ReqResForm("update", spriteData);
-            byte[] sendData = gson.toJson(responseForm).getBytes();
 
-            System.out.println("Broadcasting updated sprite to all clients");
 
-            // Send the updated sprite information to all connected clients except the one that sent the update
-            for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
-                String clientId = entry.getKey();
-                System.out.println("Broadcasting to Client ID: " + clientId);
-                if (!clientId.equals(updatedSprite.getClientId())) {
-                    ClientKey clientKey = getClientKey(clientId);
-                    System.out.println("Client Key: " + clientKey);
-                    Sprite sprite = entry.getValue();
-                    if (clientKey != null) {
-                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, sprite.getPort());
-                        try {
-                            socket.send(sendPacket);
-                            System.out.println("Sent sprite update to client: " + clientId);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
+
+
+//            // Create an 'update' response ReqResForm with the updated sprite information
+//            Gson gson = new Gson();
+//            String spriteData = gson.toJson(updatedSprite);
+//            ReqResForm responseForm = new ReqResForm("update", spriteData);
+//            byte[] sendData = gson.toJson(responseForm).getBytes();
+//
+//            System.out.println("Broadcasting updated sprite to all clients");
+//
+//            // Send the updated sprite information to all connected clients except the one that sent the update
+//            for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
+//                String clientId = entry.getKey();
+//                System.out.println("Broadcasting to Client ID: " + clientId);
+//                if (!clientId.equals(updatedSprite.getClientId())) {
+//                    ClientKey clientKey = getClientKey(clientId);
+//                    System.out.println("Client Key: " + clientKey);
+//                    Sprite sprite = entry.getValue();
+//                    if (clientKey != null) {
+//                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, sprite.getPort());
+//                        try {
+//                            socket.send(sendPacket);
+//                            System.out.println("Sent sprite update to client: " + clientId);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }
         }
 
         private ClientKey getClientKey(String clientId) {
@@ -246,7 +252,9 @@ public class Server extends JPanel {
             responseUpdateSprites(sprite.getClientId());
 
             // TODO: send a response='new' to other clients
-            broadcastNewSprite(sprite);
+
+                //TODO: get all clients
+            broadcastNewSprite(sprite, );
 
 
             // Add the sprite to the clients HashMap using the client's address as the key
@@ -268,7 +276,7 @@ public class Server extends JPanel {
 //            }
         }
 
-        private void broadcastNewSprite(Sprite sprite) {
+        private void broadcastNewSprite(Sprite sprite, List<Sprite> clientSprites) {
 
             // TODO: convert sprite to string data
             // TODO: create a reqresform type='new' data=data
