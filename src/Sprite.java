@@ -2,23 +2,25 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 
-import com.google.gson.annotations.Expose;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Random;
 
 public class Sprite {
-//    private ImageIcon image;
+    transient Random rand = new Random();
     @Expose
     private String clientId;
     @Expose
-    private int x = Client.WINDOW_WIDTH / 2;
+    private int x = Client.WINDOW_WIDTH / 2;                              // spawn at center
+//    private int x = rand.nextInt(Client.WINDOW_WIDTH / 2 + 1);            // spawn at random loc
     @Expose
-    private int y = Client.WINDOW_HEIGHT / 2;
+    private int y = Client.WINDOW_HEIGHT / 2;                             // spawn at center
+//    private int y = rand.nextInt(Client.WINDOW_HEIGHT / 2 + 1);      // spawn at random loc
+
     private int width;
     private int height;
 
