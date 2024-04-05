@@ -1,8 +1,15 @@
+import com.google.gson.annotations.Expose;
+
 import java.awt.*;
 
 public class Particle {
-    private int x, y; // Position
+    @Expose
+    private int x;
+    @Expose
+    private int y; // Position
+    @Expose
     private double velocity;
+    @Expose
     private double angle; // In degrees
 
 

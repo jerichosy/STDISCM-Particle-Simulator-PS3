@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import javax.swing.*;
 import java.awt.*;
@@ -66,7 +67,7 @@ public class Server extends JPanel {
                     Thread listener = new Thread(new FormListener(requests, socket));
                     listener.start();
 
-                    Thread handler = new Thread(new FormHandler(requests, socket, clients));
+                    Thread handler = new Thread(new FormHandler(requests, socket, clients, particles));
                     handler.start();
 
 
@@ -113,17 +114,19 @@ public class Server extends JPanel {
         private final BlockingQueue<ReqResForm> requests;
 
         private final DatagramSocket socket;
-        private final AtomicBoolean paricleSendingGoing = new AtomicBoolean(false);
+        private final AtomicBoolean particleSendingGoing = new AtomicBoolean(false);
 
         private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
 
         private final Map<InetAddress, Sprite> clients;
+        private final List<Particle> particleList;
 
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<InetAddress, Sprite> clients) {
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<InetAddress, Sprite> clients, List<Particle> particles) {
             this.requests = requests;
             this.socket = socket;
             this.clients = clients;
+            this.particleList = particles;
         }
 
         @Override
@@ -136,19 +139,6 @@ public class Server extends JPanel {
                         case "update_sprite": executor.submit(() -> performUpdateSprite(form));
                         case "synch": executor.submit(() -> performSynchParticles(form));
                     }
-//                    switch (form.getType()) {
-//                        case "new":
-//                            performNewClientProcedure(form);
-//                            break;
-//                        case "update_sprite":
-//                            performUpdateSprite(form);
-//                            break;
-//                        case "synch":
-//                            performSynchParticles(form);
-//                            break;
-//                    }
-
-
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -157,7 +147,38 @@ public class Server extends JPanel {
         }
 
         private void performSynchParticles(ReqResForm form) {
+            if (!particleSendingGoing.compareAndSet(false, true)) {
+                try {
+                    // Create a Gson object
+                    Gson gson = new GsonBuilder()
+                            .excludeFieldsWithoutExposeAnnotation()
+                            .create();
+
+                    // Submit particle synchronization tasks using ExecutorService
+                    for (Particle particle : this.particleList) {
+                        executor.submit(() -> {
+                            try {
+                                String data = gson.toJson(particle);
+                                String jsonString = gson.toJson(new ReqResForm("synch", data));
+                                byte[] sendData = jsonString.getBytes();
+                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), Ports.FOR_PARTICLE.getPortNumber());
+                                socket.send(sendPacket);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    }
+                } finally {
+                    particleSendingGoing.set(false);
+                }
+            } else {
+                // If particle sending is already in progress, add the form back to the queue for later processing
+                requests.add(form);
+            }
         }
+
+
+
 
         private void performUpdateSprite(ReqResForm form) {
             // Extract the updated sprite information from the form data
@@ -193,8 +214,6 @@ public class Server extends JPanel {
 
 
     }
-
-
 
 
     private void runUI(){
