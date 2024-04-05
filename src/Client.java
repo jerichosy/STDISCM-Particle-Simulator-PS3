@@ -14,12 +14,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
 
 public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
-    private java.util.List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
-    private java.util.List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+    private List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+    private static List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private long lastTime = System.currentTimeMillis();
@@ -129,7 +130,7 @@ public class Client extends JPanel implements KeyListener {
 
         private final String serverAddress;
 
-        private final List<Particle> tempParticleList;
+        private final List<Particle> tempParticleList = new CopyOnWriteArrayList<>();
 
         public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket,  String serverAddress, java.util.List<Particle> particles) {
             this.requests = requests;
@@ -157,6 +158,14 @@ public class Client extends JPanel implements KeyListener {
                 }
             }
 
+        }
+
+        private void addNewSpriteToList(ReqResForm form) {
+            String data = form.getData();
+            Gson gson = new Gson();
+            Sprite newSprite = gson.fromJson(data, Sprite.class);
+
+            otherSprites.add(newSprite);
         }
 
     }
