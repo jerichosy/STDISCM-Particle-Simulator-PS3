@@ -9,6 +9,8 @@ import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.List;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -18,8 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
-    private java.util.List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
-    private java.util.List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+    private List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+    private List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private long lastTime = System.currentTimeMillis();
@@ -32,7 +34,7 @@ public class Client extends JPanel implements KeyListener {
 
     private long lastUpdateTime = System.currentTimeMillis();
 
-    private java.util.List<Thread> threads = new ArrayList<>();
+    private List<Thread> threads = new ArrayList<>();
 
 
     private String serverAddress;
@@ -125,11 +127,11 @@ public class Client extends JPanel implements KeyListener {
 
         private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
-        private final java.util.List<Particle> particleList;
+        private final List<Particle> particleList;
 
         private final String serverAddress;
 
-        private final List<Particle> tempParticleList;
+        private final List<Particle> tempParticleList = new CopyOnWriteArrayList<>();
 
         public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket,  String serverAddress, java.util.List<Particle> particles) {
             this.requests = requests;
@@ -157,6 +159,12 @@ public class Client extends JPanel implements KeyListener {
                 }
             }
 
+        }
+
+        private void performParticleUpdate(ReqResForm form) {
+            Gson gson = new Gson();
+            Particle particle = gson.fromJson(form.getData(), Particle.class);
+            tempParticleList.add(particle);
         }
 
     }
