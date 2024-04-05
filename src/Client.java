@@ -7,10 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 
@@ -67,7 +64,22 @@ public class Client extends JPanel implements KeyListener {
     private void requestUpdatedParticles() {
         System.out.println("Requesting updated particles from server...");
 
-        // fetchUpdatedParticlesFromServer();
+         fetchUpdatedParticlesFromServer();
+    }
+
+    private void fetchUpdatedParticlesFromServer() {
+        try {
+            DatagramSocket serverSocket;
+            serverSocket = new DatagramSocket(4991);
+
+            byte[] buffer = new byte[2048];
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
+//            particles = unpackParticles(packet.getData(), packet.getLength());
+
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void registerWithServer() throws UnknownHostException {
