@@ -44,6 +44,10 @@ public class Client extends JPanel implements KeyListener {
 
     private DatagramSocket socket;
 
+    private int localPort;
+
+    private InetAddress address;
+
     public Client(String serverAddress) throws UnknownHostException, SocketException{
         this.serverAddress = serverAddress;
 
@@ -72,7 +76,7 @@ public class Client extends JPanel implements KeyListener {
             public void run() {
                 DatagramSocket socket = null;
                 try {
-                    socket = new DatagramSocket(Ports.RES_REP.getPortNumber());
+                    socket = new DatagramSocket(localPort, address);
 
                     Thread listener = new Thread(new Client.FormListener(requests, socket));
                     listener.start();
@@ -195,7 +199,8 @@ public class Client extends JPanel implements KeyListener {
 
         // Create a DatagramSocket with a random available port
         this.socket = new DatagramSocket();
-        int localPort = socket.getLocalPort();
+        localPort = socket.getLocalPort();
+        address = socket.getLocalAddress();
 
         // Create a 'new' request ReqResForm with the sprite information
         Gson gson = new GsonBuilder()
