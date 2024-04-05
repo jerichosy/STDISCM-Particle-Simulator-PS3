@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import javax.swing.*;
 import java.awt.*;
@@ -33,65 +34,28 @@ public class Client extends JPanel implements KeyListener {
     private String serverAddress;
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    public Client(String serverAddress) throws UnknownHostException, SocketException {
+
+    private DatagramSocket socket;
+
+    public Client(String serverAddress) throws UnknownHostException, SocketException{
         this.serverAddress = serverAddress;
 
         runUI();
         registerWithServer();
-        receiveUpdatedSprites();
 
-        this.addKeyListener(this);
-        this.setFocusable(true); // Set the JPanel as focusable
-        this.requestFocusInWindow(); // Request focus for the JPanel
 
-        for (Thread thread : threads) {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                // Restore interrupted status
-                Thread.currentThread().interrupt(); // Restore the interrupted status
-                System.err.println("Thread interrupted while waiting for completion: " + e.getMessage());
-            }
-        }
-
-        scheduleParticleUpdate();
-
-    }
-
-    private void scheduleParticleUpdate() {
-        scheduler.scheduleAtFixedRate(this::requestUpdatedParticles, 0, 2, TimeUnit.SECONDS);
-    }
-
-    private void requestUpdatedParticles() {
-        System.out.println("Requesting updated particles from server...");
-
-         fetchUpdatedParticlesFromServer();
-    }
-
-    private void fetchUpdatedParticlesFromServer() {
-        try {
-            DatagramSocket serverSocket;
-            serverSocket = new DatagramSocket(4991);
-
-            byte[] buffer = new byte[2048];
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
-//            particles = unpackParticles(packet.getData(), packet.getLength());
-
-        } catch (SocketException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private void registerWithServer() throws UnknownHostException, SocketException {
-        // new Sprite(Particle.gridWidth , Particle.gridHeight, UUID.randomUUID().toString());
 
         // Create a DatagramSocket with a random available port
-        DatagramSocket socket = new DatagramSocket();
+        this.socket = new DatagramSocket();
         int localPort = socket.getLocalPort();
 
         // Create a 'new' request ReqResForm with the sprite information
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation()
+                .create();
         sprite.setPort(localPort);
         String spriteData = gson.toJson(sprite);
         ReqResForm form = new ReqResForm("new", spriteData);
@@ -107,58 +71,133 @@ public class Client extends JPanel implements KeyListener {
         }
     }
 
-    private void receiveUpdatedSprites() {
-        Thread receiverThread = new Thread(() -> {
-            try {
-                DatagramSocket socket = new DatagramSocket();
-                byte[] buffer = new byte[1024];
 
-                while (true) {
-                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                    socket.receive(packet);
-
-                    String receivedData = new String(packet.getData(), 0, packet.getLength());
-                    System.out.println("Received sprite update: " + receivedData);
-
-                    Gson gson = new Gson();
-                    ReqResForm form = gson.fromJson(receivedData, ReqResForm.class);
-
-                    if (form.getType().equals("update")) {
-                        Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
-                        updateLocalSprite(updatedSprite);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        receiverThread.start();
-    }
-
-    private void updateLocalSprite(Sprite updatedSprite) {
-        System.out.println("Updating sprite: " + updatedSprite);
-
-        if (updatedSprite.getClientId().equals(sprite.getClientId())) {
-            // Update the client's own sprite
-            sprite = updatedSprite;
-        } else {
-            boolean found = false;
-            for (int i = 0; i < otherSprites.size(); i++) {
-                Sprite localSprite = otherSprites.get(i);
-                if (localSprite.getClientId().equals(updatedSprite.getClientId())) {
-                    // TODO: Check if this if-statement is correct
-                    otherSprites.set(i, updatedSprite);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                otherSprites.add(updatedSprite);
-            }
-        }
-        repaint();
-    }
+//    public Client(String serverAddress) throws UnknownHostException, SocketException {
+//        this.serverAddress = serverAddress;
+//
+//        runUI();
+//        registerWithServer();
+//        receiveUpdatedSprites();
+//
+//        this.addKeyListener(this);
+//        this.setFocusable(true); // Set the JPanel as focusable
+//        this.requestFocusInWindow(); // Request focus for the JPanel
+//
+//        for (Thread thread : threads) {
+//            try {
+//                thread.join();
+//            } catch (InterruptedException e) {
+//                // Restore interrupted status
+//                Thread.currentThread().interrupt(); // Restore the interrupted status
+//                System.err.println("Thread interrupted while waiting for completion: " + e.getMessage());
+//            }
+//        }
+//
+//        scheduleParticleUpdate();
+//
+//    }
+//
+//    private void scheduleParticleUpdate() {
+//        scheduler.scheduleAtFixedRate(this::requestUpdatedParticles, 0, 2, TimeUnit.SECONDS);
+//    }
+//
+//    private void requestUpdatedParticles() {
+//        System.out.println("Requesting updated particles from server...");
+//
+//         fetchUpdatedParticlesFromServer();
+//    }
+//
+//    private void fetchUpdatedParticlesFromServer() {
+//        try {
+//            DatagramSocket serverSocket;
+//            serverSocket = new DatagramSocket(4991);
+//
+//            byte[] buffer = new byte[2048];
+//            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+//
+////            particles = unpackParticles(packet.getData(), packet.getLength());
+//
+//        } catch (SocketException e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
+//
+//    private void registerWithServer() throws UnknownHostException, SocketException {
+//        // new Sprite(Particle.gridWidth , Particle.gridHeight, UUID.randomUUID().toString());
+//
+//        // Create a DatagramSocket with a random available port
+//        DatagramSocket socket = new DatagramSocket();
+//        int localPort = socket.getLocalPort();
+//
+//        // Create a 'new' request ReqResForm with the sprite information
+//        Gson gson = new Gson();
+//        sprite.setPort(localPort);
+//        String spriteData = gson.toJson(sprite);
+//        ReqResForm form = new ReqResForm("new", spriteData);
+//
+//        // Send the request to the server via Port A
+//        byte[] sendData = gson.toJson(form).getBytes();
+//        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(serverAddress), Ports.RES_REP.getPortNumber());
+//        try {
+//            socket.send(sendPacket);
+//            socket.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    private void receiveUpdatedSprites() {
+//        Thread receiverThread = new Thread(() -> {
+//            try {
+//                DatagramSocket socket = new DatagramSocket();
+//                byte[] buffer = new byte[1024];
+//
+//                while (true) {
+//                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+//                    socket.receive(packet);
+//
+//                    String receivedData = new String(packet.getData(), 0, packet.getLength());
+//                    System.out.println("Received sprite update: " + receivedData);
+//
+//                    Gson gson = new Gson();
+//                    ReqResForm form = gson.fromJson(receivedData, ReqResForm.class);
+//
+//                    if (form.getType().equals("update")) {
+//                        Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+//                        updateLocalSprite(updatedSprite);
+//                    }
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        });
+//
+//        receiverThread.start();
+//    }
+//
+//    private void updateLocalSprite(Sprite updatedSprite) {
+//        System.out.println("Updating sprite: " + updatedSprite);
+//
+//        if (updatedSprite.getClientId().equals(sprite.getClientId())) {
+//            // Update the client's own sprite
+//            sprite = updatedSprite;
+//        } else {
+//            boolean found = false;
+//            for (int i = 0; i < otherSprites.size(); i++) {
+//                Sprite localSprite = otherSprites.get(i);
+//                if (localSprite.getClientId().equals(updatedSprite.getClientId())) {
+//                    // TODO: Check if this if-statement is correct
+//                    otherSprites.set(i, updatedSprite);
+//                    found = true;
+//                    break;
+//                }
+//            }
+//            if (!found) {
+//                otherSprites.add(updatedSprite);
+//            }
+//        }
+//        repaint();
+//    }
 
     private void runUI(){
         Thread uiThread = new Thread(new Runnable() {
