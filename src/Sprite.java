@@ -46,6 +46,9 @@ public class Sprite {
     private final int SERVER_PORT = 4990;
     private final String SERVER_ADDRESS = "localhost";
 
+    public static int gridWidth = Math.round((Client.WINDOW_WIDTH * 1.0f) / Sprite.PERIPHERY_WIDTH);
+    public static int gridHeight = Math.round((Client.WINDOW_HEIGHT * 1.0f) / Sprite.PERIPHERY_HEIGHT);
+
     @Expose
     private int port;
 
@@ -79,6 +82,18 @@ public class Sprite {
 //        image.paintIcon(observer, g, drawX, drawY);
         g.setColor(new Color(red, green, blue));
         g.fillOval(drawX, drawY, width, height);
+    }
+
+    public void drawOtherClient(Graphics g, int spriteX, int spriteY, int spriteExX, int spriteExY) {
+        // Calculate the drawX and drawY based on the sprite's position
+        int drawX = (spriteX) + (x - spriteX + (spriteExX * -1)) * (gridWidth) - (gridWidth / 2);
+        int drawY = (spriteY) + (y - spriteY + (spriteExY * -1)) * (gridHeight) - (gridHeight / 2);
+
+        // Check if the calculated coordinates are within the bounds of the window
+        if (drawX >= 0 && drawX < Client.WINDOW_WIDTH &&
+                drawY >= 0 && drawY < Client.WINDOW_HEIGHT) {
+            g.fillOval(drawX, drawY, width, height); // Draw the other sprite
+        }
     }
 
     public void drawServer(Graphics g) {

@@ -3,17 +3,14 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
@@ -29,6 +26,7 @@ public class Client extends JPanel implements KeyListener {
     private int frames = 0;
     private String fps = "FPS: 0";
     private String particleCount = "Particle Count: 0";
+    private String playerCount = "Player Count: 0";
     private boolean isPaused = false;
 
     private Sprite sprite = new Sprite(Particle.gridWidth , Particle.gridHeight, UUID.randomUUID().toString());
@@ -117,6 +115,7 @@ public class Client extends JPanel implements KeyListener {
                     byte[] receiveBuffer = new byte[1024];
                     DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
                     socket.receive(receivePacket);
+                    System.out.println("Received packet from: " + receivePacket.getAddress() + ":" + receivePacket.getPort());
                     synchronized (requests){
                         requests.add(ReqResForm.createFormFromRequest(receivePacket));
                     }
@@ -155,8 +154,10 @@ public class Client extends JPanel implements KeyListener {
         @Override
         public void run() {
             while (true) {
+                System.out.println("Handling form...");
                 try {
                     ReqResForm form = requests.take();
+                    System.out.println("Form type: " + form.getType());
                     switch (form.getType()) {
                         case "new":
                             executor.submit(() -> addNewSpriteToList(form));
@@ -183,13 +184,13 @@ public class Client extends JPanel implements KeyListener {
 
         private void performUpdateSpriteList(ReqResForm form) {
             Gson gson = new Gson();
-            Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+            Sprite updatedSprites = gson.fromJson(form.getData(), Sprite.class);
 
+            System.out.println("Updating sprites");
 
-
-
-
-
+            // Update the otherSprites list with the received sprite information
+            otherSprites.clear();
+            otherSprites.addAll(Arrays.asList(updatedSprites));
         }
 
         private void performParticleUpdate(ReqResForm form) {
@@ -224,6 +225,7 @@ public class Client extends JPanel implements KeyListener {
         localPort = socket.getLocalPort();
         address = socket.getLocalAddress();
 
+        System.out.println("Local address: " + address);
         System.out.println("Local port: " + localPort);
 
         // Create a 'new' request ReqResForm with the sprite information
@@ -441,7 +443,8 @@ public class Client extends JPanel implements KeyListener {
                     long delta = currentTime - lastTime;
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
                     //System.out.println(frames + " frames in the last " + delta + " ms");
-                    System.out.println(otherSprites.size() + " sprites in the list");
+//                    System.out.println(otherSprites.size() + " sprites in the list");
+                    System.out.println(otherSprites);
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();
@@ -467,6 +470,9 @@ public class Client extends JPanel implements KeyListener {
             // Update particle count string with the current size of the particles list
             particleCount = "Particle Count: " + particles.size();
 
+            // Update player count string with the current size of the otherSprites list
+            playerCount = "Other Sprites Count: " + otherSprites.size();
+
             repaint(); // Re-draw GUI with updated particle positions
         }
     }
@@ -483,6 +489,10 @@ public class Client extends JPanel implements KeyListener {
         for (Particle particle : particles) {
             particle.draw(g, sprite.getX(), sprite.getY(), sprite.getExcessX(), sprite.getExcessY()); // Let each particle draw itself
         } // At 60k particles, this takes 110-120ms
+
+        for (Sprite otherSprite : otherSprites) {
+            otherSprite.drawOtherClient(g, sprite.getX(), sprite.getY(), sprite.getExcessX(), sprite.getExcessY());
+        }
 
 
         frames++; // Increment frame count
@@ -529,6 +539,13 @@ public class Client extends JPanel implements KeyListener {
 //        // Set the color for the pause state text
 //        g.setColor(Color.WHITE);
 //        g.drawString("Renderer Paused: " + isPaused, 10, 70);
+
+        // Draw a semi-transparent background for the Sprite position coords for better readability
+        g.setColor(new Color(0, 0, 0, 128)); // Black with 50% opacity
+        g.fillRect(5, 55, 150, 20); // Adjust size as needed
+        // Set the color for the Sprite position coords text
+        g.setColor(Color.WHITE);
+        g.drawString(playerCount, 10, 70);
 
         // Draw a semi-transparent background for the Developer/Explorer mode for better readability
         g.setColor(new Color(0, 0, 0, 128)); // Black with 50% opacity

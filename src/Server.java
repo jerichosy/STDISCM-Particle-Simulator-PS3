@@ -185,6 +185,8 @@ public class Server extends JPanel {
 
 
         private void performUpdateSprite(ReqResForm form) {
+            System.out.println("Received sprite update from client");
+
             // Extract the updated sprite information from the form data
             Gson gson = new Gson();
             Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
@@ -197,33 +199,57 @@ public class Server extends JPanel {
         }
 
         private void broadcastUpdatedSprite(Sprite updatedSprite) {
-            System.out.println("Broadcasting updated sprite to all clients");
+//            System.out.println("Broadcasting updated sprite to all clients");
+////
+//            // Extract the updated sprite information from the form data
+//            Gson gson = new Gson();
 //
-            // Extract the updated sprite information from the form data
-            Gson gson = new Gson();
-
-//            // Update the sprite in the clients map
-//            clients.put(updatedSprite.getClientId(), updatedSprite);
+////            // Update the sprite in the clients map
+////            clients.put(updatedSprite.getClientId(), updatedSprite);
+//
+//            // Create an 'update' response ReqResForm with the updated sprite information
+//            String spriteData = gson.toJson(updatedSprite);
+//            ReqResForm responseForm = new ReqResForm("update", spriteData);
+//            byte[] sendData = gson.toJson(responseForm).getBytes();
+//
+//            // Send the updated sprite information to all connected clients except the one that sent the update
+//            for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
+//                String clientId = entry.getKey();
+//                if (!clientId.equals(updatedSprite.getClientId())) {
+//                    ClientKey clientKey = getClientKey(clientId);
+//                    System.out.println("Client Key: " + clientKey);
+//                    if (clientKey != null) {
+//                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
+//                        try {
+//                            socket.send(sendPacket);
+//                            System.out.println("Sent sprite update to client: " + clientId);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }
 
             // Create an 'update' response ReqResForm with the updated sprite information
+            Gson gson = new Gson();
             String spriteData = gson.toJson(updatedSprite);
             ReqResForm responseForm = new ReqResForm("update", spriteData);
             byte[] sendData = gson.toJson(responseForm).getBytes();
 
+            System.out.println("Broadcasting updated sprite to clients");
+
             // Send the updated sprite information to all connected clients except the one that sent the update
-            for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
-                String clientId = entry.getKey();
+            for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
+                ClientKey clientKey = entry.getKey();
+                String clientId = entry.getValue();
+                System.out.println("Client Key: " + clientKey);
                 if (!clientId.equals(updatedSprite.getClientId())) {
-                    ClientKey clientKey = getClientKey(clientId);
-                    System.out.println("Client Key: " + clientKey);
-                    if (clientKey != null) {
-                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
-                        try {
-                            socket.send(sendPacket);
-                            System.out.println("Sent sprite update to client: " + clientId);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
+                    try {
+                        socket.send(sendPacket);
+                        System.out.println("Sent sprite update to client: " + clientId);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
@@ -278,6 +304,25 @@ public class Server extends JPanel {
 //            } catch (IOException e) {
 //                e.printStackTrace();
 //            }
+
+            // Send the list of all other clients' sprites to the new client
+            List<Sprite> otherSprites = new ArrayList<>(clients.values());
+            otherSprites.remove(sprite); // Remove the new client's sprite from the list
+            sendOtherSpritesToClient(clientKey, otherSprites);
+        }
+
+        private void sendOtherSpritesToClient(ClientKey clientKey, List<Sprite> otherSprites) {
+            Gson gson = new Gson();
+            String spriteData = gson.toJson(otherSprites);
+            ReqResForm responseForm = new ReqResForm("update", spriteData);
+            byte[] sendData = gson.toJson(responseForm).getBytes();
+
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
+            try {
+                socket.send(sendPacket);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         private void broadcastNewSprite(Sprite sprite, List<String> clientSprites) {
@@ -385,7 +430,7 @@ public class Server extends JPanel {
         } // At 60k particles, this takes 110-120ms
 
         // Render each client's sprite
-        for (Sprite sprite : clients.values()) {
+        for (Sprite sprite : clients.values()) {  // TODO: Is this usage thread-safe?
             sprite.drawServer(g); // call the method to draw it from the server's perspective
         }
 
