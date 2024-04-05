@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
 
 public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
@@ -133,11 +134,12 @@ public class Client extends JPanel implements KeyListener {
 
         private final List<Particle> tempParticleList = new CopyOnWriteArrayList<>();
 
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket,  String serverAddress, java.util.List<Particle> particles) {
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, String serverAddress, java.util.List<Particle> particles) {
             this.requests = requests;
             this.socket = socket;
             this.serverAddress = serverAddress;
             this.particleList = particles;
+            this.tempParticleList = particleList;
         }
 
 
@@ -152,7 +154,6 @@ public class Client extends JPanel implements KeyListener {
                         case "particle": executor.submit(() -> performParticleUpdate(form));
                         case "sync_start": executor.submit(() -> syncStart(form));
                         case "sync_end": executor.submit(() -> syncEnd(form));
-
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -160,13 +161,21 @@ public class Client extends JPanel implements KeyListener {
             }
 
         }
-
-        private void performParticleUpdate(ReqResForm form) {
+      
+      private void performParticleUpdate(ReqResForm form) {
             Gson gson = new Gson();
             Particle particle = gson.fromJson(form.getData(), Particle.class);
             tempParticleList.add(particle);
         }
+      
+      private void syncStart(ReqResForm form) {
+            tempParticleList.clear();
 
+        }
+        private void syncEnd(ReqResForm form) {
+            particleList.clear();
+            particleList.addAll(tempParticleList);
+        }
     }
 
 
