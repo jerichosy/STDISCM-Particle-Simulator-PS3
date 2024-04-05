@@ -56,6 +56,9 @@ public class Client extends JPanel implements KeyListener {
         runUI();
         registerWithServer();
         runServerListener();
+
+//        receiveUpdatedSprites();
+
         this.addKeyListener(this);
         this.setFocusable(true); // Set the JPanel as focusable
         this.requestFocusInWindow(); // Request focus for the JPanel
@@ -159,8 +162,8 @@ public class Client extends JPanel implements KeyListener {
                             executor.submit(() -> addNewSpriteToList(form));
                             break;
                         case "update":
-                                executor.submit(() -> performUpdateSpriteList(form));
-                                break;
+                            executor.submit(() -> performUpdateSpriteList(form));
+                            break;
                         case "particle":
                             executor.submit(() -> performParticleUpdate(form));
                             break;
@@ -221,13 +224,18 @@ public class Client extends JPanel implements KeyListener {
         localPort = socket.getLocalPort();
         address = socket.getLocalAddress();
 
+        System.out.println("Local port: " + localPort);
+
         // Create a 'new' request ReqResForm with the sprite information
-        Gson gson = new GsonBuilder()
-                .excludeFieldsWithoutExposeAnnotation()
-                .create();
+//        Gson gson = new GsonBuilder()
+//                .excludeFieldsWithoutExposeAnnotation()
+//                .create();
+        Gson gson = new Gson();
         sprite.setPort(localPort);
         String spriteData = gson.toJson(sprite);
         ReqResForm form = new ReqResForm("new", spriteData);
+
+        System.out.println("Sprite data: " + spriteData);
 
         // Send the request to the server via Port A
         byte[] sendData = gson.toJson(form).getBytes();
@@ -367,6 +375,57 @@ public class Client extends JPanel implements KeyListener {
 //        }
 //        repaint();
 //    }
+
+    private void receiveUpdatedSprites() {
+        Thread receiverThread = new Thread(() -> {
+            try {
+                DatagramSocket socket = new DatagramSocket(/* specify the port */);
+                byte[] buffer = new byte[1024];
+
+                while (true) {
+                    System.out.println("Listening for sprite updates...");
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    socket.receive(packet);
+
+                    String receivedData = new String(packet.getData(), 0, packet.getLength());
+                    System.out.println("Received sprite update: " + receivedData);
+
+                    Gson gson = new Gson();
+                    ReqResForm form = gson.fromJson(receivedData, ReqResForm.class);
+
+                    if (form.getType().equals("update")) {
+                        Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+                        updateLocalSprite(updatedSprite);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        receiverThread.start();
+    }
+
+    private void updateLocalSprite(Sprite updatedSprite) {
+        if (updatedSprite.getClientId().equals(sprite.getClientId())) {
+            // Update the client's own sprite
+            sprite = updatedSprite;
+        } else {
+            boolean found = false;
+            for (int i = 0; i < otherSprites.size(); i++) {
+                Sprite localSprite = otherSprites.get(i);
+                if (localSprite.getClientId().equals(updatedSprite.getClientId())) {
+                    otherSprites.set(i, updatedSprite);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                otherSprites.add(updatedSprite);
+            }
+        }
+        repaint();
+    }
 
     private void runUI(){
         Thread uiThread = new Thread(new Runnable() {

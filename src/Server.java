@@ -202,6 +202,9 @@ public class Server extends JPanel {
             // Extract the updated sprite information from the form data
             Gson gson = new Gson();
 
+//            // Update the sprite in the clients map
+//            clients.put(updatedSprite.getClientId(), updatedSprite);
+
             // Create an 'update' response ReqResForm with the updated sprite information
             String spriteData = gson.toJson(updatedSprite);
             ReqResForm responseForm = new ReqResForm("update", spriteData);
@@ -262,6 +265,9 @@ public class Server extends JPanel {
             ClientKey clientKey = new ClientKey(form.getAddress(), sprite.getPort()); // Use the assigned port number
             clientAddresses.put(clientKey, sprite.getClientId());
 
+            System.out.println("New client registered: " + sprite);
+            System.out.println(clientKey);
+
 //            // Send a response to the client to confirm the registration
 //            String responseData = gson.toJson("OK");
 //            ReqResForm responseForm = new ReqResForm("new", responseData);
@@ -315,6 +321,14 @@ public class Server extends JPanel {
         @Override
         public int hashCode() {
             return Objects.hash(address, port);
+        }
+
+        @Override
+        public String toString() {
+            return "ClientKey{" +
+                    "address=" + address +
+                    ", port=" + port +
+                    '}';
         }
     }
 

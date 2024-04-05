@@ -46,6 +46,7 @@ public class Sprite {
     private final int SERVER_PORT = 4990;
     private final String SERVER_ADDRESS = "localhost";
 
+    @Expose
     private int port;
 
     public Sprite(int width, int height, String clientId) {
