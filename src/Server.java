@@ -185,99 +185,47 @@ public class Server extends JPanel {
 
 
         private void performUpdateSprite(ReqResForm form) {
-
             // Extract the updated sprite information from the form data
             Gson gson = new Gson();
             Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
 
             // Update the sprite in the clients map
             clients.put(updatedSprite.getClientId(), updatedSprite);
-//
-//            // Broadcast the updated sprite information to all connected clients
-            broadcastUpdatedSprite(updatedSprite.getClientId());
+
+            // Broadcast the updated sprite information to all connected clients
+            broadcastUpdatedSprite(updatedSprite);
         }
 
-        private void broadcastUpdatedSprite(String clientID) {
-            // Remove sprite from hashmap, store in temp var
-            Sprite currSprite = clients.remove(clientID);
+        private void broadcastUpdatedSprite(Sprite updatedSprite) {
+            System.out.println("Broadcasting updated sprite to all clients");
+//
+            // Extract the updated sprite information from the form data
+            Gson gson = new Gson();
+            
+            // Create an 'update' response ReqResForm with the updated sprite information
+            String spriteData = gson.toJson(updatedSprite);
+            ReqResForm responseForm = new ReqResForm("update", spriteData);
+            byte[] sendData = gson.toJson(responseForm).getBytes();
 
-            Gson gson = new GsonBuilder()
-                    .excludeFieldsWithoutExposeAnnotation()
-                    .create();
-
-           ;
-
-            //For each sprite in the hashmap:
-            clients.forEach((key, sprite) -> {
-
-                //Generate a list of all sprites other than it.
-                HashMap<String, Sprite> notIt = new HashMap<>();
-                clients.forEach((key2, sprite2)  -> {
-                    if (!key2.equals(key)){
-                        ClientKey clientKey = getClientKey(key2);
-                        if (clientKey != null)
-                            notIt.put(key2, sprite2);
-//                        System.out.println("Client Key: " + clientKey);
-                    }
-                });
-
-                //Add the new sprite to the list (the one removed)
-                notIt.put(clientID, currSprite);
-
-                ClientKey clientKey = getClientKey(key);
-                if (clientKey != null) {
-                    //Send the list to the designated client via response =’update’
-                    JsonArray jsonArray = new JsonArray();
-                    for (Sprite value: notIt.values()){
-                        jsonArray.add(gson.toJsonTree(value));
-                    }
-
-                    String jsonString = jsonArray.getAsString();
-                    byte[] sendData = gson.toJson(new ReqResForm("update", jsonString)).getBytes();
-
-                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, sprite.getPort());
-                    try {
-                        socket.send(sendPacket);
-//                        System.out.println("Sent sprite update to client: " + clientID);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+            // Send the updated sprite information to all connected clients except the one that sent the update
+            for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
+                String clientId = entry.getKey();
+                if (!clientId.equals(updatedSprite.getClientId())) {
+                    ClientKey clientKey = getClientKey(clientId);
+                    System.out.println("Client Key: " + clientKey);
+                    if (clientKey != null) {
+                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
+                        try {
+                            socket.send(sendPacket);
+                            System.out.println("Sent sprite update to client: " + clientId);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
-            });
-
-            //add back to clients the updated sprite
-            clients.put(clientID, currSprite);
-
-
-
-//            // Create an 'update' response ReqResForm with the updated sprite information
-//            Gson gson = new Gson();
-//            String spriteData = gson.toJson(updatedSprite);
-//            ReqResForm responseForm = new ReqResForm("update", spriteData);
-//            byte[] sendData = gson.toJson(responseForm).getBytes();
-//
-//            System.out.println("Broadcasting updated sprite to all clients");
-//
-//            // Send the updated sprite information to all connected clients except the one that sent the update
-//            for (Map.Entry<String, Sprite> entry : clients.entrySet()) {
-//                String clientId = entry.getKey();
-//                System.out.println("Broadcasting to Client ID: " + clientId);
-//                if (!clientId.equals(updatedSprite.getClientId())) {
-//                    ClientKey clientKey = getClientKey(clientId);
-//                    System.out.println("Client Key: " + clientKey);
-//                    Sprite sprite = entry.getValue();
-//                    if (clientKey != null) {
-//                        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, sprite.getPort());
-//                        try {
-//                            socket.send(sendPacket);
-//                            System.out.println("Sent sprite update to client: " + clientId);
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//            }
+            }
         }
+
 
         private ClientKey getClientKey(String clientId) {
             for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
