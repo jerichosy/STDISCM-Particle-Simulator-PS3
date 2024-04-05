@@ -14,12 +14,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
 
 public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
-    private java.util.List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
-    private java.util.List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+    private List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+    private List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private long lastTime = System.currentTimeMillis();
@@ -125,17 +126,18 @@ public class Client extends JPanel implements KeyListener {
 
         private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
-        private final java.util.List<Particle> particleList;
+        private final List<Particle> particleList;
 
         private final String serverAddress;
 
-        private final List<Particle> tempParticleList;
+        private final List<Particle> tempParticleList = new CopyOnWriteArrayList<>();
 
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket,  String serverAddress, java.util.List<Particle> particles) {
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, String serverAddress, java.util.List<Particle> particles) {
             this.requests = requests;
             this.socket = socket;
             this.serverAddress = serverAddress;
             this.particleList = particles;
+            this.tempParticleList = particleList;
         }
 
 
@@ -150,7 +152,6 @@ public class Client extends JPanel implements KeyListener {
                         case "particle": executor.submit(() -> performParticleUpdate(form));
                         case "sync_start": executor.submit(() -> syncStart(form));
                         case "sync_end": executor.submit(() -> syncEnd(form));
-
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -158,6 +159,19 @@ public class Client extends JPanel implements KeyListener {
             }
 
         }
+
+        private void syncStart(ReqResForm form) {
+            tempParticleList.clear();
+
+        }
+        private void syncEnd(ReqResForm form) {
+            particleList.clear();
+            particleList.addAll(tempParticleList);
+        }
+
+
+
+
 
     }
 
