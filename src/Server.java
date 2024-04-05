@@ -146,37 +146,6 @@ public class Server extends JPanel {
 
         }
 
-//        private void performSynchParticles(ReqResForm form) {
-//            if (!particleSendingGoing.compareAndSet(false, true)) {
-//                try {
-//                    // Create a Gson object
-//                    Gson gson = new GsonBuilder()
-//                            .excludeFieldsWithoutExposeAnnotation()
-//                            .create();
-//
-//                    // Submit particle synchronization tasks using ExecutorService
-//                    for (Particle particle : particles) {
-//                        executor.submit(() -> {
-//                            try {
-//                                String data = gson.toJson(particle);
-//                                String jsonString = gson.toJson(new ReqResForm("synch", data));
-//                                byte[] sendData = jsonString.getBytes();
-//                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), Ports.FOR_PARTICLE.getPortNumber());
-//                                socket.send(sendPacket);
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-//                        });
-//                    }
-//                } finally {
-//                    particleSendingGoing.set(false);
-//                }
-//            } else {
-//                // If particle sending is already in progress, add the form back to the queue for later processing
-//                requests.add(form);
-//            }
-//        }
-
         private void performSynchParticles(ReqResForm form) {
             if (!particleSendingGoing.compareAndSet(false, true)) {
                 try {
@@ -245,8 +214,6 @@ public class Server extends JPanel {
 
 
     }
-
-
 
 
     private void runUI(){
