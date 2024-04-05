@@ -33,6 +33,8 @@ public class Client extends JPanel implements KeyListener {
 
     private Sprite sprite = new Sprite(Particle.gridWidth , Particle.gridHeight, UUID.randomUUID().toString());
 
+    private HashMap<String, Sprite> otherClients = new HashMap<>();
+
     private long lastUpdateTime = System.currentTimeMillis();
 
     private List<Thread> threads = new ArrayList<>();
@@ -155,18 +157,35 @@ public class Client extends JPanel implements KeyListener {
                     switch (form.getType()) {
                         case "new":
                             executor.submit(() -> addNewSpriteToList(form));
-//                         case "update": executor.submit(() -> performUpdateSpriteList(form));
+                            break;
+                        case "update":
+                                executor.submit(() -> performUpdateSpriteList(form));
+                                break;
                         case "particle":
                             executor.submit(() -> performParticleUpdate(form));
+                            break;
                         case "sync_start":
                             executor.submit(() -> syncStart(form));
+                            break;
                         case "sync_end":
                             executor.submit(() -> syncEnd(form));
+                            break;
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+
+        }
+
+        private void performUpdateSpriteList(ReqResForm form) {
+            Gson gson = new Gson();
+            Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+
+
+
+
+
 
         }
 

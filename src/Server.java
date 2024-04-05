@@ -201,7 +201,7 @@ public class Server extends JPanel {
 //
             // Extract the updated sprite information from the form data
             Gson gson = new Gson();
-            
+
             // Create an 'update' response ReqResForm with the updated sprite information
             String spriteData = gson.toJson(updatedSprite);
             ReqResForm responseForm = new ReqResForm("update", spriteData);
