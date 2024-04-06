@@ -21,7 +21,9 @@ public class Sprite {
     private int y = Client.WINDOW_HEIGHT / 2;                             // spawn at center
 //    private int y = rand.nextInt(Client.WINDOW_HEIGHT / 2 + 1);      // spawn at random loc
 
+    @Expose
     private int width;
+    @Expose
     private int height;
 
     private boolean willSpawn = false;
@@ -87,19 +89,32 @@ public class Sprite {
     }
 
     public void drawOtherClient(Graphics g, int spriteX, int spriteY, int spriteExX, int spriteExY) {
-//        // Calculate the drawX and drawY based on the sprite's position
+        // Calculate the drawX and drawY based on the sprite's position
 //        int drawX = (spriteX) + (x - spriteX + (spriteExX * -1)) * (gridWidth) - (gridWidth / 2);
 //        int drawY = (spriteY) + (y - spriteY + (spriteExY * -1)) * (gridHeight) - (gridHeight / 2);
-//
+
+        int relativeX = x - spriteX;
+        int relativeY = y - spriteY;
+        int scaledX = relativeX * gridWidth + Client.WINDOW_WIDTH / 2;
+        int scaledY = relativeY * gridHeight + Client.WINDOW_HEIGHT / 2;
+        drawX = scaledX - (excessX * gridWidth);
+        drawY = scaledY - (excessY * gridHeight);
+        drawX = drawX - (width / 2);
+        drawY = drawY - (height / 2);
+
 //        printPosition();
 //        System.out.printf("Draw X: %d, Draw Y: %d%n", drawX, drawY);
-//
-//        // Check if the calculated coordinates are within the bounds of the window
-//        if (drawX >= 0 && drawX < Client.WINDOW_WIDTH &&
-//                drawY >= 0 && drawY < Client.WINDOW_HEIGHT) {
-//            g.setColor(new Color(red, green, blue));
-//            g.fillOval(drawX, drawY, width, height); // Draw the other sprite
-//        }
+        System.out.println("Width: " + width + ", Height: " + height);
+//        System.out.println(excessX + ", " + excessY);
+
+        // Check if the calculated coordinates are within the bounds of the window
+        if (drawX >= 0 && drawX < Client.WINDOW_WIDTH &&
+                drawY >= 0 && drawY < Client.WINDOW_HEIGHT) {
+            g.setColor(new Color(red, green, blue));
+            g.fillOval(drawX, drawY, width, height); // Draw the other sprite
+
+//            System.out.println("Other sprite drawn.");
+        }
     }
 
     public void drawServer(Graphics g) {
