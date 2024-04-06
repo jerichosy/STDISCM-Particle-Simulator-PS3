@@ -14,12 +14,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
     private List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
-//    private static List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private long lastTime = System.currentTimeMillis();
@@ -142,6 +142,9 @@ public class Client extends JPanel implements KeyListener {
 
         private ConcurrentHashMap<String, Sprite> otherClients;
 
+        private AtomicInteger particlesSize = new AtomicInteger(0);
+        private AtomicInteger particlesNum = new AtomicInteger(0);
+
         public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, String serverAddress, List<Particle> particles, ConcurrentHashMap<String, Sprite> otherClients ) {
             this.requests = requests;
             this.socket = socket;
@@ -159,6 +162,10 @@ public class Client extends JPanel implements KeyListener {
                 try {
                     ReqResForm form = requests.take();
                     System.out.println("Form type: " + form.getType());
+                    if (form.getType().equals("particle")) {
+                        System.out.println(particlesNum.incrementAndGet());
+                    }
+
                     switch (form.getType()) {
                         case "new":
                             executor.submit(() -> addNewSpriteToList(form));
@@ -198,6 +205,7 @@ public class Client extends JPanel implements KeyListener {
             Gson gson = new Gson();
             Particle particle = gson.fromJson(form.getData(), Particle.class);
             tempParticleList.add(particle);
+//            System.out.println(tempParticleList.size());
         }
 
         private void addNewSpriteToList(ReqResForm form) {
@@ -211,11 +219,31 @@ public class Client extends JPanel implements KeyListener {
 
         private void syncStart(ReqResForm form) {
             tempParticleList.clear();
+
+            // Create a Gson object
+            Gson gson = new Gson();
+
+            // Parse the JSON string and convert it to an integer
+            int size = gson.fromJson(form.getData(), int.class);
+            particlesSize.set(size);
         }
 
         private void syncEnd(ReqResForm form) {
+
+//            try{
+//                if (tempParticleList.size() < particlesSize.get()){
+//                    Thread.sleep(1000);
+//                    requests.put(form);
+//                } else {
+//
+//                }
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
             particleList.clear();
             particleList.addAll(tempParticleList);
+
+//            System.out.println("NumParticles: " + particleList.size());
         }
 
     }
@@ -476,8 +504,6 @@ public class Client extends JPanel implements KeyListener {
 //                }
 //            }
 
-
-//            repaint();
         }
     }
 

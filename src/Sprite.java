@@ -87,21 +87,24 @@ public class Sprite {
     }
 
     public void drawOtherClient(Graphics g, int spriteX, int spriteY, int spriteExX, int spriteExY) {
-        // Calculate the drawX and drawY based on the sprite's position
-        int drawX = (spriteX) + (x - spriteX + (spriteExX * -1)) * (gridWidth) - (gridWidth / 2);
-        int drawY = (spriteY) + (y - spriteY + (spriteExY * -1)) * (gridHeight) - (gridHeight / 2);
-
-        // Check if the calculated coordinates are within the bounds of the window
-        if (drawX >= 0 && drawX < Client.WINDOW_WIDTH &&
-                drawY >= 0 && drawY < Client.WINDOW_HEIGHT) {
-            g.setColor(new Color(red, green, blue));
-            g.fillOval(drawX, drawY, width, height); // Draw the other sprite
-        }
+//        // Calculate the drawX and drawY based on the sprite's position
+//        int drawX = (spriteX) + (x - spriteX + (spriteExX * -1)) * (gridWidth) - (gridWidth / 2);
+//        int drawY = (spriteY) + (y - spriteY + (spriteExY * -1)) * (gridHeight) - (gridHeight / 2);
+//
+//        printPosition();
+//        System.out.printf("Draw X: %d, Draw Y: %d%n", drawX, drawY);
+//
+//        // Check if the calculated coordinates are within the bounds of the window
+//        if (drawX >= 0 && drawX < Client.WINDOW_WIDTH &&
+//                drawY >= 0 && drawY < Client.WINDOW_HEIGHT) {
+//            g.setColor(new Color(red, green, blue));
+//            g.fillOval(drawX, drawY, width, height); // Draw the other sprite
+//        }
     }
 
     public void drawServer(Graphics g) {
         g.setColor(new Color(red, green, blue));
-        g.fillOval(x, y, 5, 5);
+        g.fillOval(x, y, 10, 10);
     }
 
         public  void move(int dx, int dy){

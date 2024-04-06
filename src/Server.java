@@ -151,8 +151,8 @@ public class Server extends JPanel {
                         case "update_sprite":
                             executor.submit(() -> performUpdateSprite(form));
                             break;
-                        case "synch":
-                            executor.submit(() -> performSynchParticles(form));
+                        case "sync":
+                            executor.submit(() -> performSyncParticles(form));
                             break;
                     }
 
@@ -167,28 +167,51 @@ public class Server extends JPanel {
 
         }
 
-        private void performSynchParticles(ReqResForm form) {
+        private void performSyncParticles(ReqResForm form) {
             if (!particleSendingGoing.compareAndSet(false, true)) {
                 try {
                     // Create a Gson object
                     Gson gson = new GsonBuilder()
                             .excludeFieldsWithoutExposeAnnotation()
                             .create();
+                    CountDownLatch latch = new CountDownLatch(particleList.size()); // Number of elements in the list
+
+                    byte[] sync = gson.toJson(new ReqResForm("sync_start", gson.toJson(particleList.size()))).getBytes();
+                    DatagramPacket syncPacket = new DatagramPacket(sync, sync.length, form.getAddress(), form.getPort());
+                    socket.send(syncPacket);
+
 
                     // Submit particle synchronization tasks using ExecutorService
                     for (Particle particle : this.particleList) {
                         executor.submit(() -> {
                             try {
                                 String data = gson.toJson(particle);
-                                String jsonString = gson.toJson(new ReqResForm("synch", data));
+                                String jsonString = gson.toJson(new ReqResForm("particle", data));
                                 byte[] sendData = jsonString.getBytes();
-                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), Ports.FOR_PARTICLE.getPortNumber());
+                                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), form.getPort());
                                 socket.send(sendPacket);
+                                latch.countDown(); // Signal completion of printing
                             } catch (IOException e) {
                                 e.printStackTrace();
+                            } finally {
+//                                latch.countDown(); // Signal completion of printing
+                                System.out.println(latch.getCount());
                             }
                         });
                     }
+
+                    try {
+                        latch.await(); // Wait for all printing tasks to complete
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    sync = gson.toJson(new ReqResForm("sync_end", "")).getBytes();
+                    syncPacket = new DatagramPacket(sync, sync.length, form.getAddress(), form.getPort());
+                    socket.send(syncPacket);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
                 } finally {
                     particleSendingGoing.set(false);
                 }
@@ -261,9 +284,14 @@ public class Server extends JPanel {
           Sprite newClient = gson.fromJson(form.getData(), Sprite.class);
 
 
-          // TODO: add a request='synch' to requestsQueue
+          // TODO: add a request='sync' to requestsQueue
+           try{
+               requests.put(new ReqResForm(form.getAddress(), form.getPort(), "sync", ""));
+           } catch (InterruptedException e) {
+               throw new RuntimeException(e);
+           }
 
-          // TODO: send a response='update' to that client for all other clients
+            // TODO: send a response='update' to that client for all other clients
             System.out.println(form.getAddress());
             System.out.println(form.getPort());
             System.out.println(newClient.getClientId());
@@ -277,12 +305,10 @@ public class Server extends JPanel {
 
             // TODO: Add the sprite to the clients HashMap using the client's address as the key
             clients.put(newClient.getClientId(), newClient);
-//            System.out.println(clients);
 
             // TODO: Add the client's address and port to the clientAddresses HashMap
             ClientKey clientKey = new ClientKey(form.getAddress(), newClient.getPort()); // Use the assigned port number
             clientAddresses.put(clientKey, newClient.getClientId());
-//            System.out.println(clientAddresses);
         }
 
         private void sendOtherSpritesToClient(ClientKey clientKey, List<Sprite> otherSprites) {
@@ -312,7 +338,6 @@ public class Server extends JPanel {
 
             // TODO: send that JSON to the current client
             byte[] sendData = jsonString.getBytes();
-//            System.out.println(sendData.length);
             System.out.println("CLIENT ADDRESSES: " + clientAddresses.size());
             for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
                 ClientKey clientKey = entry.getKey();
