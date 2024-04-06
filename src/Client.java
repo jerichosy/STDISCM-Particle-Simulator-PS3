@@ -241,7 +241,10 @@ public class Client extends JPanel implements KeyListener {
 
         // Send the request to the server via Port A
         byte[] sendData = gson.toJson(form).getBytes();
-        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(serverAddress), Ports.RES_REP.getPortNumber());
+        System.out.println(sendData.length);
+        InetAddress address = InetAddress.getByName(serverAddress);
+        System.out.println(address);
+        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, address, Ports.RES_REP.getPortNumber());
         try {
             socket.send(sendPacket);
             socket.close();
@@ -377,36 +380,36 @@ public class Client extends JPanel implements KeyListener {
 //        }
 //        repaint();
 //    }
-
-    private void receiveUpdatedSprites() {
-        Thread receiverThread = new Thread(() -> {
-            try {
-                DatagramSocket socket = new DatagramSocket(/* specify the port */);
-                byte[] buffer = new byte[1024];
-
-                while (true) {
-                    System.out.println("Listening for sprite updates...");
-                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                    socket.receive(packet);
-
-                    String receivedData = new String(packet.getData(), 0, packet.getLength());
-                    System.out.println("Received sprite update: " + receivedData);
-
-                    Gson gson = new Gson();
-                    ReqResForm form = gson.fromJson(receivedData, ReqResForm.class);
-
-                    if (form.getType().equals("update")) {
-                        Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
-                        updateLocalSprite(updatedSprite);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        receiverThread.start();
-    }
+//
+//    private void receiveUpdatedSprites() {
+//        Thread receiverThread = new Thread(() -> {
+//            try {
+//                DatagramSocket socket = new DatagramSocket(/* specify the port */);
+//                byte[] buffer = new byte[1024];
+//
+//                while (true) {
+//                    System.out.println("Listening for sprite updates...");
+//                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+//                    socket.receive(packet);
+//
+//                    String receivedData = new String(packet.getData(), 0, packet.getLength());
+//                    System.out.println("Received sprite update: " + receivedData);
+//
+//                    Gson gson = new Gson();
+//                    ReqResForm form = gson.fromJson(receivedData, ReqResForm.class);
+//
+//                    if (form.getType().equals("update")) {
+//                        Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+//                        updateLocalSprite(updatedSprite);
+//                    }
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        });
+//
+//        receiverThread.start();
+//    }
 
     private void updateLocalSprite(Sprite updatedSprite) {
         if (updatedSprite.getClientId().equals(sprite.getClientId())) {
@@ -444,7 +447,7 @@ public class Client extends JPanel implements KeyListener {
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
                     //System.out.println(frames + " frames in the last " + delta + " ms");
 //                    System.out.println(otherSprites.size() + " sprites in the list");
-                    System.out.println(otherSprites);
+//                    System.out.println(otherSprites);
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();

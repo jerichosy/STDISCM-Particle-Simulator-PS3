@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Server extends JPanel {
     public static final int WINDOW_WIDTH = 1280;
@@ -58,7 +60,7 @@ public class Server extends JPanel {
 
     private void runClientListener(){
         Thread listener = new Thread(new Runnable() {
-            private final BlockingQueue<ReqResForm> requests = new LinkedBlockingQueue<>();
+            private final LinkedBlockingQueue<ReqResForm> requests = new LinkedBlockingQueue<>();
 
             @Override
             public void run() {
@@ -100,11 +102,11 @@ public class Server extends JPanel {
                     byte[] receiveBuffer = new byte[1024];
                     DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
                     socket.receive(receivePacket);
-                    synchronized (requests){
-                        requests.add(ReqResForm.createFormFromRequest(receivePacket));
-                    }
-                } catch (IOException e) {
+                    System.out.println("PACKET RECEIVED");
+                    requests.put(ReqResForm.createFormFromRequest(receivePacket));
+                } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
+
                 }
             }
 
@@ -123,29 +125,46 @@ public class Server extends JPanel {
         private final Map<String, Sprite> clients;
         private final Map<ClientKey, String> clientAddresses;
       private final List<Particle> particleList;
+
+//      private final Lock lock = new ReentrantLock();
+
+
       
-      public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<String, Sprite> clients, Map<ClientKey, String> clientAddresses, List<Particle> particles) {
+      public FormHandler(LinkedBlockingQueue<ReqResForm> requests, DatagramSocket socket, Map<String, Sprite> clients, Map<ClientKey, String> clientAddresses, List<Particle> particles) {
             this.requests = requests;
             this.socket = socket;
             this.clients = clients;
             this.clientAddresses = clientAddresses;
             this.particleList = particles;
-        }
+//          this.lock = lock;
+      }
 
 
         @Override
         public void run() {
             while (true){
                 try {
+                    System.out.println("Before Take: " + requests.size());
                     ReqResForm form = requests.take();
-                    switch (form.getType()){
-                        case "new": executor.submit(() -> performNewClientProcedure(form));
-                        case "update_sprite": executor.submit(() -> performUpdateSprite(form));
-                        case "synch": executor.submit(() -> performSynchParticles(form));
+                    switch (form.getType()) {
+                        case "new":
+                            executor.submit(() -> performNewClientProcedure(form));
+                            break;
+                        case "update_sprite":
+                            executor.submit(() -> performUpdateSprite(form));
+                            break;
+                        case "synch":
+                            executor.submit(() -> performSynchParticles(form));
+                            break;
                     }
+
+                    System.out.println("After Take: " + requests.size());
+
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
+
+
             }
 
         }
@@ -239,18 +258,21 @@ public class Server extends JPanel {
             System.out.println("Broadcasting updated sprite to clients");
 
             // Send the updated sprite information to all connected clients except the one that sent the update
+            System.out.println(clientAddresses.entrySet());
+            System.out.printf("Client ID: %s%n", updatedSprite.getClientId());
             for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
                 ClientKey clientKey = entry.getKey();
                 String clientId = entry.getValue();
-                System.out.println("Client Key: " + clientKey);
+                System.out.printf("Client ID: %s, ClientKey: %s%n", clientId, clientKey);
                 if (!clientId.equals(updatedSprite.getClientId())) {
-                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
-                    try {
-                        socket.send(sendPacket);
-                        System.out.println("Sent sprite update to client: " + clientId);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    System.out.println("Client Key: " + clientKey);
+//                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
+//                    try {
+//                        socket.send(sendPacket);
+//                        System.out.println("Sent sprite update to client: " + clientId);
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
                 }
             }
         }
@@ -267,48 +289,64 @@ public class Server extends JPanel {
 
         private void performNewClientProcedure(ReqResForm form) {
 
-            // Extract the sprite information from the form data
-            Gson gson = new Gson();
-            Sprite sprite = gson.fromJson(form.getData(), Sprite.class);
+          System.out.println("NEW CLIENT EMERGED");
+          Gson gson = new Gson();
+          Sprite sprite = gson.fromJson(form.getData(), Sprite.class);
+
+//          System.out.println(form.getType());
 
 
-            // TODO: add a request='synch' to requestsQueue
-
-            // TODO: send a response='update' to that client
-            responseUpdateSprites(sprite.getClientId());
-
-            // TODO: send a response='new' to other clients
-
-                //TODO: get all clients
-            List<String> keysList = new ArrayList<>(clients.keySet());
-            broadcastNewSprite(sprite, keysList);
 
 
-            // Add the sprite to the clients HashMap using the client's address as the key
-            clients.put(sprite.getClientId(), sprite);
+
+
+
+
+
+
+
+//            // Extract the sprite information from the form data
+//            Gson gson = new Gson();
+//            Sprite sprite = gson.fromJson(form.getData(), Sprite.class);
 //
-            // Add the client's address and port to the clientAddresses HashMap
-            ClientKey clientKey = new ClientKey(form.getAddress(), sprite.getPort()); // Use the assigned port number
-            clientAddresses.put(clientKey, sprite.getClientId());
-
-            System.out.println("New client registered: " + sprite);
-            System.out.println(clientKey);
-
-//            // Send a response to the client to confirm the registration
-//            String responseData = gson.toJson("OK");
-//            ReqResForm responseForm = new ReqResForm("new", responseData);
-//            byte[] sendData = gson.toJson(responseForm).getBytes();
-//            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), form.getPort());
-//            try {
-//                socket.send(sendPacket);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-
-            // Send the list of all other clients' sprites to the new client
-            List<Sprite> otherSprites = new ArrayList<>(clients.values());
-            otherSprites.remove(sprite); // Remove the new client's sprite from the list
-            sendOtherSpritesToClient(clientKey, otherSprites);
+//
+//            // TODO: add a request='synch' to requestsQueue
+//
+//            // TODO: send a response='update' to that client
+//            responseUpdateSprites(sprite.getClientId());
+//
+//            // TODO: send a response='new' to other clients
+//
+//                //TODO: get all clients
+//            List<String> keysList = new ArrayList<>(clients.keySet());
+//            broadcastNewSprite(sprite, keysList);
+//
+//
+//            // Add the sprite to the clients HashMap using the client's address as the key
+//            clients.put(sprite.getClientId(), sprite);
+////
+//            // Add the client's address and port to the clientAddresses HashMap
+//            ClientKey clientKey = new ClientKey(form.getAddress(), sprite.getPort()); // Use the assigned port number
+//            clientAddresses.put(clientKey, sprite.getClientId());
+//
+//            System.out.println("New client registered: " + sprite);
+//            System.out.println(clientKey);
+//
+////            // Send a response to the client to confirm the registration
+////            String responseData = gson.toJson("OK");
+////            ReqResForm responseForm = new ReqResForm("new", responseData);
+////            byte[] sendData = gson.toJson(responseForm).getBytes();
+////            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), form.getPort());
+////            try {
+////                socket.send(sendPacket);
+////            } catch (IOException e) {
+////                e.printStackTrace();
+////            }
+//
+//            // Send the list of all other clients' sprites to the new client
+//            List<Sprite> otherSprites = new ArrayList<>(clients.values());
+//            otherSprites.remove(sprite); // Remove the new client's sprite from the list
+//            sendOtherSpritesToClient(clientKey, otherSprites);
         }
 
         private void sendOtherSpritesToClient(ClientKey clientKey, List<Sprite> otherSprites) {
@@ -391,7 +429,7 @@ public class Server extends JPanel {
                     long delta = currentTime - lastTime;
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
 //                    System.out.println(frames + " frames in the last " + delta + " ms");
-                    System.out.println(clients.values());
+//                    System.out.println(clients.values());
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();
