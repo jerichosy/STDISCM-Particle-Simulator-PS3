@@ -26,7 +26,9 @@ public class Sprite {
 
     private boolean willSpawn = false;
 
+    @Expose
     private int excessX = 0;
+    @Expose
     private int excessY = 0;
 
     public static final int PERIPHERY_WIDTH = 33;
@@ -92,6 +94,7 @@ public class Sprite {
         // Check if the calculated coordinates are within the bounds of the window
         if (drawX >= 0 && drawX < Client.WINDOW_WIDTH &&
                 drawY >= 0 && drawY < Client.WINDOW_HEIGHT) {
+            g.setColor(new Color(red, green, blue));
             g.fillOval(drawX, drawY, width, height); // Draw the other sprite
         }
     }
@@ -108,15 +111,13 @@ public class Sprite {
 
     public void updatePosition(int x, int y){
 
-//        System.out.println("HELLO");
-
         this.x += x;
         excessX = Math.max(Math.min(0, this.x - MID_PERIPHERAL_WIDTH), (this.x + MID_PERIPHERAL_WIDTH) - Client.WINDOW_WIDTH );
 
         this.y += y;
         excessY = Math.max(Math.min(0, this.y - MID_PERIPHERAL_HEIGHT), (this.y + MID_PERIPHERAL_HEIGHT) - Client.WINDOW_HEIGHT);
 
-        printPosition();
+
         sendDataToServer();
     }
 
@@ -139,9 +140,7 @@ public class Sprite {
 
             serverSocket.close();
 
-            System.out.println("sent to server: " + jsonString);
-
-
+//            System.out.println("sent to server: " + jsonString);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

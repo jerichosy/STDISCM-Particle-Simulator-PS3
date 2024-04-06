@@ -19,7 +19,7 @@ public class Client extends JPanel implements KeyListener {
     public static final int WINDOW_WIDTH = 1280;
     public static final int WINDOW_HEIGHT = 720;
     private List<Particle> particles = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
-    private static List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
+//    private static List<Sprite> otherSprites = new CopyOnWriteArrayList<>(); // Thread-safe ArrayList ideal for occasional writes
     private ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     private long lastTime = System.currentTimeMillis();
@@ -31,7 +31,7 @@ public class Client extends JPanel implements KeyListener {
 
     private Sprite sprite = new Sprite(Particle.gridWidth , Particle.gridHeight, UUID.randomUUID().toString());
 
-    private HashMap<String, Sprite> otherClients = new HashMap<>();
+    private ConcurrentHashMap<String, Sprite> otherClients = new ConcurrentHashMap<>();
 
     private long lastUpdateTime = System.currentTimeMillis();
 
@@ -84,7 +84,7 @@ public class Client extends JPanel implements KeyListener {
                     Thread listener = new Thread(new Client.FormListener(requests, socket));
                     listener.start();
 
-                    Thread handler = new Thread(new Client.FormHandler(requests, socket, serverAddress, particles));
+                    Thread handler = new Thread(new Client.FormHandler(requests, socket, serverAddress, particles, otherClients));
                     handler.start();
 
 
@@ -116,10 +116,8 @@ public class Client extends JPanel implements KeyListener {
                     DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
                     socket.receive(receivePacket);
                     System.out.println("Received packet from: " + receivePacket.getAddress() + ":" + receivePacket.getPort());
-                    synchronized (requests){
-                        requests.add(ReqResForm.createFormFromRequest(receivePacket));
-                    }
-                } catch (IOException e) {
+                    requests.put(ReqResForm.createFormFromRequest(receivePacket));
+                } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -142,12 +140,15 @@ public class Client extends JPanel implements KeyListener {
 
         private List<Particle> tempParticleList;
 
-        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, String serverAddress, List<Particle> particles) {
+        private ConcurrentHashMap<String, Sprite> otherClients;
+
+        public FormHandler(BlockingQueue<ReqResForm> requests, DatagramSocket socket, String serverAddress, List<Particle> particles, ConcurrentHashMap<String, Sprite> otherClients ) {
             this.requests = requests;
             this.socket = socket;
             this.serverAddress = serverAddress;
             this.particleList = particles;
             this.tempParticleList = new CopyOnWriteArrayList<>();
+            this.otherClients = otherClients;
         }
 
 
@@ -184,13 +185,13 @@ public class Client extends JPanel implements KeyListener {
 
         private void performUpdateSpriteList(ReqResForm form) {
             Gson gson = new Gson();
-            Sprite updatedSprites = gson.fromJson(form.getData(), Sprite.class);
+            Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
 
             System.out.println("Updating sprites");
 
             // Update the otherSprites list with the received sprite information
-            otherSprites.clear();
-            otherSprites.addAll(Arrays.asList(updatedSprites));
+            otherClients.put(updatedSprite.getClientId(), updatedSprite);
+            System.out.println(otherClients);
         }
 
         private void performParticleUpdate(ReqResForm form) {
@@ -204,7 +205,8 @@ public class Client extends JPanel implements KeyListener {
             Gson gson = new Gson();
             Sprite newSprite = gson.fromJson(data, Sprite.class);
 
-            otherSprites.add(newSprite);
+            otherClients.put(newSprite.getClientId(), newSprite);
+            System.out.println(otherClients);
         }
 
         private void syncStart(ReqResForm form) {
@@ -229,10 +231,9 @@ public class Client extends JPanel implements KeyListener {
         System.out.println("Local port: " + localPort);
 
         // Create a 'new' request ReqResForm with the sprite information
-//        Gson gson = new GsonBuilder()
-//                .excludeFieldsWithoutExposeAnnotation()
-//                .create();
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation()
+                .create();
         sprite.setPort(localPort);
         String spriteData = gson.toJson(sprite);
         ReqResForm form = new ReqResForm("new", spriteData);
@@ -251,185 +252,6 @@ public class Client extends JPanel implements KeyListener {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-
-//    public Client(String serverAddress) throws UnknownHostException, SocketException {
-//        this.serverAddress = serverAddress;
-//
-//        runUI();
-//        registerWithServer();
-//        receiveUpdatedSprites();
-//
-//        this.addKeyListener(this);
-//        this.setFocusable(true); // Set the JPanel as focusable
-//        this.requestFocusInWindow(); // Request focus for the JPanel
-//
-//        for (Thread thread : threads) {
-//            try {
-//                thread.join();
-//            } catch (InterruptedException e) {
-//                // Restore interrupted status
-//                Thread.currentThread().interrupt(); // Restore the interrupted status
-//                System.err.println("Thread interrupted while waiting for completion: " + e.getMessage());
-//            }
-//        }
-//
-//        scheduleParticleUpdate();
-//
-//    }
-//
-//    private void scheduleParticleUpdate() {
-//        scheduler.scheduleAtFixedRate(this::requestUpdatedParticles, 0, 2, TimeUnit.SECONDS);
-//    }
-//
-//    private void requestUpdatedParticles() {
-//        System.out.println("Requesting updated particles from server...");
-//
-//         fetchUpdatedParticlesFromServer();
-//    }
-//
-//    private void fetchUpdatedParticlesFromServer() {
-//        try {
-//            DatagramSocket serverSocket;
-//            serverSocket = new DatagramSocket(4991);
-//
-//            byte[] buffer = new byte[2048];
-//            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-//
-////            particles = unpackParticles(packet.getData(), packet.getLength());
-//
-//        } catch (SocketException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//
-//    private void registerWithServer() throws UnknownHostException, SocketException {
-//        // new Sprite(Particle.gridWidth , Particle.gridHeight, UUID.randomUUID().toString());
-//
-//        // Create a DatagramSocket with a random available port
-//        DatagramSocket socket = new DatagramSocket();
-//        int localPort = socket.getLocalPort();
-//
-//        // Create a 'new' request ReqResForm with the sprite information
-//        Gson gson = new Gson();
-//        sprite.setPort(localPort);
-//        String spriteData = gson.toJson(sprite);
-//        ReqResForm form = new ReqResForm("new", spriteData);
-//
-//        // Send the request to the server via Port A
-//        byte[] sendData = gson.toJson(form).getBytes();
-//        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(serverAddress), Ports.RES_REP.getPortNumber());
-//        try {
-//            socket.send(sendPacket);
-//            socket.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void receiveUpdatedSprites() {
-//        Thread receiverThread = new Thread(() -> {
-//            try {
-//                DatagramSocket socket = new DatagramSocket();
-//                byte[] buffer = new byte[1024];
-//
-//                while (true) {
-//                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-//                    socket.receive(packet);
-//
-//                    String receivedData = new String(packet.getData(), 0, packet.getLength());
-//                    System.out.println("Received sprite update: " + receivedData);
-//
-//                    Gson gson = new Gson();
-//                    ReqResForm form = gson.fromJson(receivedData, ReqResForm.class);
-//
-//                    if (form.getType().equals("update")) {
-//                        Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
-//                        updateLocalSprite(updatedSprite);
-//                    }
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        });
-//
-//        receiverThread.start();
-//    }
-//
-//    private void updateLocalSprite(Sprite updatedSprite) {
-//        System.out.println("Updating sprite: " + updatedSprite);
-//
-//        if (updatedSprite.getClientId().equals(sprite.getClientId())) {
-//            // Update the client's own sprite
-//            sprite = updatedSprite;
-//        } else {
-//            boolean found = false;
-//            for (int i = 0; i < otherSprites.size(); i++) {
-//                Sprite localSprite = otherSprites.get(i);
-//                if (localSprite.getClientId().equals(updatedSprite.getClientId())) {
-//                    // TODO: Check if this if-statement is correct
-//                    otherSprites.set(i, updatedSprite);
-//                    found = true;
-//                    break;
-//                }
-//            }
-//            if (!found) {
-//                otherSprites.add(updatedSprite);
-//            }
-//        }
-//        repaint();
-//    }
-//
-//    private void receiveUpdatedSprites() {
-//        Thread receiverThread = new Thread(() -> {
-//            try {
-//                DatagramSocket socket = new DatagramSocket(/* specify the port */);
-//                byte[] buffer = new byte[1024];
-//
-//                while (true) {
-//                    System.out.println("Listening for sprite updates...");
-//                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-//                    socket.receive(packet);
-//
-//                    String receivedData = new String(packet.getData(), 0, packet.getLength());
-//                    System.out.println("Received sprite update: " + receivedData);
-//
-//                    Gson gson = new Gson();
-//                    ReqResForm form = gson.fromJson(receivedData, ReqResForm.class);
-//
-//                    if (form.getType().equals("update")) {
-//                        Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
-//                        updateLocalSprite(updatedSprite);
-//                    }
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        });
-//
-//        receiverThread.start();
-//    }
-
-    private void updateLocalSprite(Sprite updatedSprite) {
-        if (updatedSprite.getClientId().equals(sprite.getClientId())) {
-            // Update the client's own sprite
-            sprite = updatedSprite;
-        } else {
-            boolean found = false;
-            for (int i = 0; i < otherSprites.size(); i++) {
-                Sprite localSprite = otherSprites.get(i);
-                if (localSprite.getClientId().equals(updatedSprite.getClientId())) {
-                    otherSprites.set(i, updatedSprite);
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                otherSprites.add(updatedSprite);
-            }
-        }
-        repaint();
     }
 
     private void runUI(){
@@ -474,7 +296,7 @@ public class Client extends JPanel implements KeyListener {
             particleCount = "Particle Count: " + particles.size();
 
             // Update player count string with the current size of the otherSprites list
-            playerCount = "Other Sprites Count: " + otherSprites.size();
+            playerCount = "Other Sprites Count: " + otherClients.size();
 
             repaint(); // Re-draw GUI with updated particle positions
         }
@@ -493,7 +315,7 @@ public class Client extends JPanel implements KeyListener {
             particle.draw(g, sprite.getX(), sprite.getY(), sprite.getExcessX(), sprite.getExcessY()); // Let each particle draw itself
         } // At 60k particles, this takes 110-120ms
 
-        for (Sprite otherSprite : otherSprites) {
+        for (Sprite otherSprite : otherClients.values()) {
             otherSprite.drawOtherClient(g, sprite.getX(), sprite.getY(), sprite.getExcessX(), sprite.getExcessY());
         }
 
@@ -536,12 +358,6 @@ public class Client extends JPanel implements KeyListener {
         g.setColor(Color.WHITE); // White color for the text
         g.drawString(particleCount, 10, 45); // Draw Particle Count on screen
 
-//        // Draw a background with dynamic color for the pause state for better readability
-//        g.setColor(isPaused ? Color.RED : new Color(0, 255, 0)); // Red if paused, Green if not
-//        g.fillRect(5, 55, 150, 20); // Adjust size as needed
-//        // Set the color for the pause state text
-//        g.setColor(Color.WHITE);
-//        g.drawString("Renderer Paused: " + isPaused, 10, 70);
 
         // Draw a semi-transparent background for the Sprite position coords for better readability
         g.setColor(new Color(0, 0, 0, 128)); // Black with 50% opacity
@@ -568,45 +384,6 @@ public class Client extends JPanel implements KeyListener {
 
     }
 
-//    private void setupControlPanel(JPanel panel) {
-//        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-//
-//        JPanel panelToggle = createPanelForClearAndPause();
-//        panel.add(panelToggle);
-//    }
-
-
-
-//    private JPanel createPanelForClearAndPause(){
-//        JPanel panel = new JPanel(new FlowLayout());
-//        // Pause btn
-//        JButton pauseButton = new JButton("Pause Renderer");
-//        pauseButton.addActionListener(new ActionListener() {
-//            @Override
-//            public void actionPerformed(ActionEvent e) {
-//                togglePause(pauseButton);
-//            }
-//        });
-//        pauseButton.setPreferredSize(new Dimension(140,30));
-//        panel.add(pauseButton);
-//
-//        System.out.println(isPaused);
-//
-//        return panel;
-//    }
-
-
-
-//    private void togglePause(JButton pauseButton){
-//        isPaused = !isPaused;
-//        pauseButton.setText(isPaused ? "Resume Renderer" : "Pause Renderer"); // Update button text based on pause state
-//        repaint();  // This is needed for the pause state to be updated on the screen
-////
-//        if (!isPaused){
-//            this.setFocusable(true); // Set the JPanel as focusable
-//            this.requestFocusInWindow(); // Request focus for the JPanel
-//        }
-//    }
 
 
 
@@ -637,20 +414,7 @@ public class Client extends JPanel implements KeyListener {
                     throw new RuntimeException(e);
                 }
                 simulatorGUI.setPreferredSize(new Dimension(Client.WINDOW_WIDTH, Client.WINDOW_HEIGHT));
-
-                //            // Setup and add the control panel at the top
-                //            JPanel controlPanel = new JPanel();
-                //            controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-                //            simulatorGUI.setupControlPanel(controlPanel);
-
-
-                //
-                //            simulatorGUI.setFocusable(true);
-                //            simulatorGUI.requestFocusInWindow();
                 containerPanel.add(simulatorGUI);
-
-                //            // Add the control panel and simulatorGUI to the containerPanel
-                //            containerPanel.add(controlPanel);
 
 
                 frame.add(containerPanel);  // Add the containerPanel to the frame
@@ -675,7 +439,7 @@ public class Client extends JPanel implements KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         int keyCode = e.getKeyCode();
-        int displacement = 10;
+        int displacement = 1;
 
         if(sprite != null) {
             switch (keyCode){
@@ -704,6 +468,14 @@ public class Client extends JPanel implements KeyListener {
                     }
                     break;
             }
+
+//            if(!otherClients.isEmpty()){
+//                sprite.printPosition();
+//                for (Sprite client: otherClients.values()){
+//                    client.printPosition();
+//                }
+//            }
+
 
 //            repaint();
         }
