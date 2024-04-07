@@ -61,9 +61,9 @@ public class Sprite {
         this.height = height;
         this.clientId = clientId;
 
-        this.red = random(225);
-        this.green = random(225);
-        this.blue = random(225);
+        this.red = random(156) + 80;
+        this.green = random(156) + 80;
+        this.blue = random(156) + 80;
     }
 
     public String getClientId() {
@@ -119,7 +119,7 @@ public class Sprite {
 
     public void drawServer(Graphics g) {
         g.setColor(new Color(red, green, blue));
-        g.fillOval(x, y, 10, 10);
+        g.fillOval(x, y, 20, 20);
     }
 
         public  void move(int dx, int dy){

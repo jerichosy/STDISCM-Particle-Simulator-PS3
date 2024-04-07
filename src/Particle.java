@@ -105,7 +105,7 @@ public class Particle {
     }
 
     public void draw(Graphics g) {
-        g.fillOval(x, y, 5, 5); // Draw particle as a small circle
+        g.fillOval(x, y, 7, 7); // Draw particle as a small circle
     }
 
     
