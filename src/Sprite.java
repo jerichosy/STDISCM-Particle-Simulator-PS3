@@ -104,7 +104,7 @@ public class Sprite {
 
 //        printPosition();
 //        System.out.printf("Draw X: %d, Draw Y: %d%n", drawX, drawY);
-        System.out.println("Width: " + width + ", Height: " + height);
+//        System.out.println("Width: " + width + ", Height: " + height);
 //        System.out.println(excessX + ", " + excessY);
 
         // Check if the calculated coordinates are within the bounds of the window

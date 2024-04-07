@@ -39,7 +39,7 @@ public class Client extends JPanel implements KeyListener {
 
 
     private String serverAddress;
-    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
 
 
     private DatagramSocket socket;
@@ -240,8 +240,10 @@ public class Client extends JPanel implements KeyListener {
 //            } catch (InterruptedException e) {
 //                throw new RuntimeException(e);
 //            }
+            particlesNum.set(0);
             particleList.clear();
             particleList.addAll(tempParticleList);
+
 
 //            System.out.println("NumParticles: " + particleList.size());
         }

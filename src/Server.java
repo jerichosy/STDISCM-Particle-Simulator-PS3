@@ -61,6 +61,7 @@ public class Server extends JPanel {
     private void runClientListener(){
         Thread listener = new Thread(new Runnable() {
             private final LinkedBlockingQueue<ReqResForm> requests = new LinkedBlockingQueue<>();
+            private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
             @Override
             public void run() {
@@ -71,14 +72,33 @@ public class Server extends JPanel {
                     Thread listener = new Thread(new FormListener(requests, socket));
                     listener.start();
                   
-                  Thread handler = new Thread(new FormHandler(requests, socket, clients, clientAddresses, particles));
-                  handler.start();
+                    Thread handler = new Thread(new FormHandler(requests, socket, clients, clientAddresses, particles));
+                    handler.start();
 
+                    scheduleBroadcastParticleUpdate();
 
                 } catch (SocketException e) {
                     e.printStackTrace();
                 }
 
+            }
+
+            private void scheduleBroadcastParticleUpdate() {
+                scheduler.scheduleAtFixedRate(this::broadcastUpdatedParticles, 10, 5, TimeUnit.SECONDS);
+            }
+
+            private void broadcastUpdatedParticles() {
+                System.out.println("CLIENT ADDRESSES: " + clientAddresses.size());
+                for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
+                    // TODO: add a request='sync' to requestsQueue
+                    try{
+                        ClientKey clientKey = entry.getKey();
+                        System.out.println("Requesting updated particles from server...");
+                        requests.put(new ReqResForm(clientKey.address, clientKey.port, "sync", ""));
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
         });
         threads.add(listener);
@@ -111,6 +131,8 @@ public class Server extends JPanel {
             }
 
         }
+
+
     }
 
     private static class FormHandler implements Runnable{
@@ -283,13 +305,12 @@ public class Server extends JPanel {
           Gson gson = new Gson();
           Sprite newClient = gson.fromJson(form.getData(), Sprite.class);
 
-
-          // TODO: add a request='sync' to requestsQueue
-           try{
-               requests.put(new ReqResForm(form.getAddress(), form.getPort(), "sync", ""));
-           } catch (InterruptedException e) {
-               throw new RuntimeException(e);
-           }
+//          // TODO: add a request='sync' to requestsQueue
+//           try{
+//               requests.put(new ReqResForm(form.getAddress(), form.getPort(), "sync", ""));
+//           } catch (InterruptedException e) {
+//               throw new RuntimeException(e);
+//           }
 
             // TODO: send a response='update' to that client for all other clients
             System.out.println(form.getAddress());
