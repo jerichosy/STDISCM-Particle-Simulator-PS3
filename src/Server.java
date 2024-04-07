@@ -61,7 +61,8 @@ public class Server extends JPanel {
     private void runClientListener(){
         Thread listener = new Thread(new Runnable() {
             private final LinkedBlockingQueue<ReqResForm> requests = new LinkedBlockingQueue<>();
-            private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            private ScheduledExecutorService syncScheduler = Executors.newScheduledThreadPool(1);
+            private ScheduledExecutorService statusScheduler = Executors.newScheduledThreadPool(1);
 
             @Override
             public void run() {
@@ -76,6 +77,8 @@ public class Server extends JPanel {
                     handler.start();
 
                     scheduleBroadcastParticleUpdate();
+                    scheduleClientStatusCheck();
+
 
                 } catch (SocketException e) {
                     e.printStackTrace();
@@ -83,8 +86,39 @@ public class Server extends JPanel {
 
             }
 
+            private void scheduleClientStatusCheck() {
+                statusScheduler.scheduleAtFixedRate(() -> {
+                    for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
+                        // TODO: add a request='sync' to requestsQueue
+                        ClientKey clientKey = entry.getKey();
+                        String clientID = entry.getValue();
+                        if (!isClientAlive(clientKey.address, clientKey.port)){
+                            System.out.printf("Client Address: %s, Client Port: %d%n", clientKey.address, clientKey.port);
+                            clients.remove(clientID);
+                            clientAddresses.remove(clientKey);
+                        }
+                    }
+                }, 5, 1, TimeUnit.SECONDS);
+
+            }
+            private boolean isClientAlive(InetAddress clientAddress, int clientPort) {
+                try {
+                    // Attempt to create a socket connection to the client
+                    DatagramSocket socket = new DatagramSocket(clientPort, clientAddress);
+
+                    // If the socket is successfully created, it means the client's socket is open
+                    socket.close(); // Close the socket immediately after testing
+
+                    return false;
+                } catch (Exception e) {
+                    // If an exception occurs, it means the client's socket is closed
+                    return true;
+                }
+            }
+
+
             private void scheduleBroadcastParticleUpdate() {
-                scheduler.scheduleAtFixedRate(this::broadcastUpdatedParticles, 10, 5, TimeUnit.SECONDS);
+                syncScheduler.scheduleAtFixedRate(this::broadcastUpdatedParticles, 10, 5, TimeUnit.SECONDS);
             }
 
             private void broadcastUpdatedParticles() {
