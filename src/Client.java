@@ -115,7 +115,6 @@ public class Client extends JPanel implements KeyListener {
                     byte[] receiveBuffer = new byte[1024];
                     DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
                     socket.receive(receivePacket);
-                    System.out.println("Received packet from: " + receivePacket.getAddress() + ":" + receivePacket.getPort());
                     requests.put(ReqResForm.createFormFromRequest(receivePacket));
                 } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
@@ -158,20 +157,18 @@ public class Client extends JPanel implements KeyListener {
         @Override
         public void run() {
             while (true) {
-                System.out.println("Handling form...");
                 try {
                     ReqResForm form = requests.take();
-                    System.out.println("Form type: " + form.getType());
-                    if (form.getType().equals("particle")) {
-                        System.out.println(particlesNum.incrementAndGet());
-                    }
-
+                    System.out.println("Handling form type = " + form.getType());
                     switch (form.getType()) {
                         case "new":
                             executor.submit(() -> addNewSpriteToList(form));
                             break;
                         case "update":
                             executor.submit(() -> performUpdateSpriteList(form));
+                            break;
+                        case "remove":
+                            executor.submit(() -> removeClientSprite(form));
                             break;
                         case "particle":
                             executor.submit(() -> performParticleUpdate(form));
@@ -190,22 +187,27 @@ public class Client extends JPanel implements KeyListener {
 
         }
 
+        private void removeClientSprite(ReqResForm form) {
+            String data = form.getData();
+            Gson gson = new Gson();
+            Sprite newSprite = gson.fromJson(data, Sprite.class);
+
+
+            otherClients.remove(newSprite.getClientId());
+        }
+
         private void performUpdateSpriteList(ReqResForm form) {
             Gson gson = new Gson();
             Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
 
-            System.out.println("Updating sprites");
-
             // Update the otherSprites list with the received sprite information
             otherClients.put(updatedSprite.getClientId(), updatedSprite);
-            System.out.println(otherClients);
         }
 
         private void performParticleUpdate(ReqResForm form) {
             Gson gson = new Gson();
             Particle particle = gson.fromJson(form.getData(), Particle.class);
             tempParticleList.add(particle);
-//            System.out.println(tempParticleList.size());
         }
 
         private void addNewSpriteToList(ReqResForm form) {
@@ -214,7 +216,6 @@ public class Client extends JPanel implements KeyListener {
             Sprite newSprite = gson.fromJson(data, Sprite.class);
 
             otherClients.put(newSprite.getClientId(), newSprite);
-            System.out.println(otherClients);
         }
 
         private void syncStart(ReqResForm form) {
@@ -230,22 +231,10 @@ public class Client extends JPanel implements KeyListener {
 
         private void syncEnd(ReqResForm form) {
 
-//            try{
-//                if (tempParticleList.size() < particlesSize.get()){
-//                    Thread.sleep(1000);
-//                    requests.put(form);
-//                } else {
-//
-//                }
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
             particlesNum.set(0);
             particleList.clear();
             particleList.addAll(tempParticleList);
 
-
-//            System.out.println("NumParticles: " + particleList.size());
         }
 
     }
@@ -259,6 +248,7 @@ public class Client extends JPanel implements KeyListener {
 
         System.out.println("Local address: " + address);
         System.out.println("Local port: " + localPort);
+        System.out.println("ID: " + sprite.getClientId());
 
         // Create a 'new' request ReqResForm with the sprite information
         Gson gson = new GsonBuilder()
@@ -268,13 +258,11 @@ public class Client extends JPanel implements KeyListener {
         String spriteData = gson.toJson(sprite);
         ReqResForm form = new ReqResForm("new", spriteData);
 
-        System.out.println("Sprite data: " + spriteData);
+        System.out.println("Client Sprite data: " + spriteData);
 
         // Send the request to the server via Port A
         byte[] sendData = gson.toJson(form).getBytes();
-        System.out.println(sendData.length);
         InetAddress address = InetAddress.getByName(serverAddress);
-        System.out.println(address);
         DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, address, Ports.RES_REP.getPortNumber());
         try {
             socket.send(sendPacket);
@@ -298,8 +286,6 @@ public class Client extends JPanel implements KeyListener {
                     long delta = currentTime - lastTime;
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
                     //System.out.println(frames + " frames in the last " + delta + " ms");
-//                    System.out.println(otherSprites.size() + " sprites in the list");
-//                    System.out.println(otherSprites);
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();
@@ -413,12 +399,6 @@ public class Client extends JPanel implements KeyListener {
         g.drawString(spriteCoordinates, 10, 125);
 
     }
-
-
-
-
-
-
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {

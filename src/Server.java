@@ -6,6 +6,7 @@ import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -88,14 +89,27 @@ public class Server extends JPanel {
 
             private void scheduleClientStatusCheck() {
                 statusScheduler.scheduleAtFixedRate(() -> {
+                    Gson gson = new Gson();
+//                    Map<ClientKey, Sprite> map;
+
                     for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
                         // TODO: add a request='sync' to requestsQueue
                         ClientKey clientKey = entry.getKey();
                         String clientID = entry.getValue();
                         if (!isClientAlive(clientKey.address, clientKey.port)){
-                            System.out.printf("Client Address: %s, Client Port: %d%n", clientKey.address, clientKey.port);
-                            clients.remove(clientID);
-                            clientAddresses.remove(clientKey);
+                            // TODO: add a request='remove_sprite' to requestsQueue
+                            try{
+
+                                Sprite client = clients.remove(clientID); //the client to remove
+                                clientAddresses.remove(clientKey);
+                                String json = gson.toJson(client);
+
+                                System.out.println("Requesting removal particles from server...");
+                                System.out.printf("Client Address: %s, Client Port: %d%n", clientKey.address, clientKey.port);
+                                requests.put(new ReqResForm("remove_sprite", json));
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }
                 }, 5, 1, TimeUnit.SECONDS);
@@ -122,7 +136,6 @@ public class Server extends JPanel {
             }
 
             private void broadcastUpdatedParticles() {
-                System.out.println("CLIENT ADDRESSES: " + clientAddresses.size());
                 for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
                     // TODO: add a request='sync' to requestsQueue
                     try{
@@ -156,7 +169,6 @@ public class Server extends JPanel {
                     byte[] receiveBuffer = new byte[1024];
                     DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
                     socket.receive(receivePacket);
-                    System.out.println("PACKET RECEIVED");
                     requests.put(ReqResForm.createFormFromRequest(receivePacket));
                 } catch (IOException | InterruptedException e) {
                     throw new RuntimeException(e);
@@ -198,7 +210,6 @@ public class Server extends JPanel {
         public void run() {
             while (true){
                 try {
-                    System.out.println("Before Take: " + requests.size());
                     ReqResForm form = requests.take();
                     switch (form.getType()) {
                         case "new":
@@ -210,15 +221,54 @@ public class Server extends JPanel {
                         case "sync":
                             executor.submit(() -> performSyncParticles(form));
                             break;
+                        case "remove_sprite":
+                            executor.submit(() -> performClientRemovalProcedure(form));
+                            break;
                     }
 
-                    System.out.println("After Take: " + requests.size());
 
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
 
 
+            }
+
+        }
+
+        private void performClientRemovalProcedure(ReqResForm form) {
+
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .create();
+
+            Sprite client = gson.fromJson(form.getData(), Sprite.class);
+            broadcastRemoveSprite(client);
+        }
+
+        private void broadcastRemoveSprite(Sprite client) {
+            // TODO: convert sprite to string data
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .create();
+            String data = gson.toJson(client);
+
+            // TODO: create a reqresform type='remove' data=data and convert reqresform to string JSON
+            String jsonString = gson.toJson(new ReqResForm("remove", data));
+
+            // TODO: send that JSON to the current client
+            byte[] sendData = jsonString.getBytes();
+            for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
+                ClientKey clientKey = entry.getKey();
+                String clientId = entry.getValue();
+                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
+                try {
+                    socket.send(sendPacket);
+                    System.out.println("Sent sprite removal to client: " + clientId);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    break;
+                }
             }
 
         }
@@ -249,9 +299,6 @@ public class Server extends JPanel {
                                 latch.countDown(); // Signal completion of printing
                             } catch (IOException e) {
                                 e.printStackTrace();
-                            } finally {
-//                                latch.countDown(); // Signal completion of printing
-                                System.out.println(latch.getCount());
                             }
                         });
                     }
@@ -281,22 +328,37 @@ public class Server extends JPanel {
 
 
         private void performUpdateSprite(ReqResForm form) {
-            System.out.println("Received sprite update from client");
 
             // Extract the updated sprite information from the form data
             Gson gson = new Gson();
             Sprite updatedSprite = gson.fromJson(form.getData(), Sprite.class);
+
+//            System.out.println("Received sprite update from client = " + updatedSprite.getClientId());
 
             // Update the sprite in the clients map
             clients.put(updatedSprite.getClientId(), updatedSprite);
 
             // Broadcast the updated sprite information to all connected clients
             broadcastUpdatedSprite(updatedSprite);
+
+            // Response all clients to the requesting client
+            responseOtherSprites(form, updatedSprite.getClientId());
         }
+
+        private void responseOtherSprites(ReqResForm form, String clientId) {
+          for (Map.Entry<String, Sprite> client: clients.entrySet()){
+              if (!client.getKey().equals(clientId)){
+                  responseUpdateSprites(client.getValue(), form);
+              }
+          }
+        }
+
 
         private void broadcastUpdatedSprite(Sprite updatedSprite) {
             // Create an 'update' response ReqResForm with the updated sprite information
-            Gson gson = new Gson();
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .create();
             String spriteData = gson.toJson(updatedSprite);
             ReqResForm responseForm = new ReqResForm("update", spriteData);
             byte[] sendData = gson.toJson(responseForm).getBytes();
@@ -304,18 +366,14 @@ public class Server extends JPanel {
             System.out.println("Broadcasting updated sprite to clients");
 
             // Send the updated sprite information to all connected clients except the one that sent the update
-            System.out.println(clientAddresses.entrySet());
-            System.out.printf("Client ID: %s%n", updatedSprite.getClientId());
             for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
                 ClientKey clientKey = entry.getKey();
                 String clientId = entry.getValue();
-                System.out.printf("Client ID: %s, ClientKey: %s%n", clientId, clientKey);
                 if (!clientId.equals(updatedSprite.getClientId())) {
-                    System.out.println("Client Key: " + clientKey);
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
                     try {
                         socket.send(sendPacket);
-                        System.out.println("Sent sprite update to client: " + clientId);
+                        System.out.println("Sent sprite update to client = " + clientId);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -323,40 +381,24 @@ public class Server extends JPanel {
             }
         }
 
-
-        private ClientKey getClientKey(String clientId) {
-            for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
-                if (entry.getValue().equals(clientId)) {
-                    return entry.getKey();
-                }
-            }
-            return null;
-        }
-
         private void performNewClientProcedure(ReqResForm form) {
 
-          System.out.println("NEW CLIENT EMERGED");
+
           Gson gson = new Gson();
           Sprite newClient = gson.fromJson(form.getData(), Sprite.class);
 
-//          // TODO: add a request='sync' to requestsQueue
-//           try{
-//               requests.put(new ReqResForm(form.getAddress(), form.getPort(), "sync", ""));
-//           } catch (InterruptedException e) {
-//               throw new RuntimeException(e);
-//           }
-
+            System.out.println("New Client emerged!");
             // TODO: send a response='update' to that client for all other clients
-            System.out.println(form.getAddress());
-            System.out.println(form.getPort());
-            System.out.println(newClient.getClientId());
+            System.out.println("Client Address: " + form.getAddress());
+            System.out.println("Client Port: " + form.getPort());
+            System.out.println("Client ID: " +newClient.getClientId());
 
             for (Sprite client : clients.values()) {  // TODO: Is this usage thread-safe? YES for ConcurrentHashMap
                 responseUpdateSprites(client, form); //this sends all current clients to new client
-
-                // TODO: send a response='new' to other clients
-                broadcastNewSprite(newClient); //this sends the new client to all current clients
             }
+
+            // TODO: send a response='new' to other clients
+            broadcastNewSprite(newClient); //this sends the new client to all current clients
 
             // TODO: Add the sprite to the clients HashMap using the client's address as the key
             clients.put(newClient.getClientId(), newClient);
@@ -366,19 +408,6 @@ public class Server extends JPanel {
             clientAddresses.put(clientKey, newClient.getClientId());
         }
 
-        private void sendOtherSpritesToClient(ClientKey clientKey, List<Sprite> otherSprites) {
-            Gson gson = new Gson();
-            String spriteData = gson.toJson(otherSprites);
-            ReqResForm responseForm = new ReqResForm("update", spriteData);
-            byte[] sendData = gson.toJson(responseForm).getBytes();
-
-            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
-            try {
-                socket.send(sendPacket);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
 
         private void broadcastNewSprite(Sprite newClient) {
 
@@ -393,20 +422,15 @@ public class Server extends JPanel {
 
             // TODO: send that JSON to the current client
             byte[] sendData = jsonString.getBytes();
-            System.out.println("CLIENT ADDRESSES: " + clientAddresses.size());
             for (Map.Entry<ClientKey, String> entry : clientAddresses.entrySet()) {
                 ClientKey clientKey = entry.getKey();
                 String clientId = entry.getValue();
-                System.out.printf("Client ID: %s, ClientKey: %s%n", clientId, clientKey);
-                System.out.printf("Client Address: %s, Client Port: %d%n", clientKey.address, clientKey.port);
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientKey.address, clientKey.port);
                 try {
                     socket.send(sendPacket);
                     System.out.println("Sent sprite update to client: " + clientId);
-                    break;
                 } catch (IOException e) {
                     e.printStackTrace();
-                    break;
                 }
             }
 
@@ -427,7 +451,6 @@ public class Server extends JPanel {
 
             // TODO: send response back to requesting client
             byte[] sendData = jsonString.getBytes();
-            System.out.println(sendData.length);
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, form.getAddress(), form.getPort());
             try {
                 socket.send(sendPacket);
@@ -484,7 +507,6 @@ public class Server extends JPanel {
                     long delta = currentTime - lastTime;
                     fps = String.format("FPS: %.1f", frames * 1000.0 / delta);
 //                    System.out.println(frames + " frames in the last " + delta + " ms");
-//                    System.out.println(clients.values());
                     frames = 0; // Reset frame count
                     lastTime = currentTime;
                 }).start();
